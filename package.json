@@ -1,0 +1,29 @@
+{
+  "name": "berlin-haus-de-gourmet",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "BERLIN — Haus de Gourmet. A nocturnal editorial website for a rooftop gourmet house and bar.",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "scan": "node scripts/safety-scan.mjs",
+    "scan:all": "node scripts/safety-scan.mjs --all"
+  },
+  "dependencies": {
+    "@astrojs/react": "^6.0.4",
+    "astro": "^7.2.4",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "sharp": "^0.35.3"
+  },
+  "devDependencies": {
+    "@fontsource-variable/bodoni-moda": "^5.1.0",
+    "@fontsource-variable/manrope": "^5.1.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0"
+  }
+}

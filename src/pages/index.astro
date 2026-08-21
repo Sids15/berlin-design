@@ -1,0 +1,17 @@
+---
+/**
+ * Home — the single-page arrival → night journey.
+ * Sections are added feature by feature; Feature 1 lays the foundation and
+ * the Hero, which the rest of the page inherits from.
+ */
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Header from "../components/layout/Header.astro";
+import Hero from "../components/sections/Hero.astro";
+---
+
+<BaseLayout>
+  <Header />
+  <main>
+    <Hero />
+  </main>
+</BaseLayout>

@@ -1,0 +1,241 @@
+---
+/**
+ * Hero (Sections 20, 24) — full-screen cinematic. Establishes the type
+ * treatment, CTA language, and proof strip the rest of the site inherits.
+ *
+ * PLACEHOLDER IMAGE: free-license (Unsplash, no attribution required),
+ * marked for swap with the real art-directed rooftop photography. Astro's
+ * <Image> emits AVIF/WebP + srcset automatically (Section 26).
+ */
+import { Picture } from "astro:assets";
+import { brand, contact, proofPoints } from "../../data/site";
+import Button from "../ui/Button.astro";
+// @swap: replace with the final hero photograph (wide 16:9–21:9 crop).
+import heroImage from "../../assets/hero/hero-rooftop-night.jpg";
+---
+
+<section id="top" class="hero mode-night" aria-label="Berlin — Haus de Gourmet">
+  <div class="hero__media">
+    <Picture
+      src={heroImage}
+      formats={["avif", "webp"]}
+      fallbackFormat="jpg"
+      alt="The candlelit rooftop terrace of Berlin — Haus de Gourmet, overlooking the city lights at night"
+      widths={[768, 1280, 1920, 2600]}
+      sizes="100vw"
+      loading="eager"
+      fetchpriority="high"
+      pictureAttributes={{ class: "hero__picture" }}
+      class="hero__image"
+    />
+    <div class="hero__scrim" aria-hidden="true"></div>
+  </div>
+
+  <div class="hero__inner container--xl">
+    <div class="hero__content">
+      <p class="hero__eyebrow">
+        A rooftop gourmet house<br />above {contact.address.line2.replace(", Indore", "")}.
+      </p>
+
+      <h1 class="hero__headline">
+        <span class="hero__line">Dining.</span>
+        <span class="hero__line">Drinking.</span>
+        <span class="hero__line hero__line--accent">Nights.</span>
+      </h1>
+
+      <div class="hero__actions">
+        <Button href="#visit" variant="primary" arrow={false}>Reserve a Table</Button>
+        <Button href="#rooftop" variant="secondary">Explore</Button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Proof strip (Section 20 · mockup) -->
+  <div class="hero__proof">
+    <ul class="proof container--xl" aria-label="At a glance">
+      {proofPoints.map((point) => (
+        <li class="proof__item">
+          <span class="proof__value">{point.value}</span>
+          <span class="proof__label">{point.label}</span>
+        </li>
+      ))}
+    </ul>
+  </div>
+
+  <span class="visually-hidden">{brand.description}</span>
+</section>
+
+<style>
+  .hero {
+    position: relative;
+    min-height: 100svh;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    overflow: hidden;
+    isolation: isolate;
+  }
+
+  /* --- Media (Section 16 treatment) --------------------------------------- */
+  .hero__media {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+  }
+
+  .hero__picture {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .hero__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    /* believable food/skin tones, not a blackout (Section 16) */
+    filter: brightness(0.82) contrast(1.04) saturate(0.92);
+    animation: hero-image-in var(--dur-entry) var(--ease-out) both;
+  }
+
+  /* Gradient only where text needs it (Section 16) — bottom + left. */
+  .hero__scrim {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background:
+      linear-gradient(to top, rgba(9, 9, 8, 0.92) 0%, rgba(9, 9, 8, 0) 55%),
+      linear-gradient(to right, rgba(9, 9, 8, 0.68) 0%, rgba(9, 9, 8, 0) 60%);
+  }
+
+  /* --- Content ------------------------------------------------------------ */
+  .hero__inner {
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+    padding-block-end: clamp(2rem, 6vh, 5rem);
+    width: 100%;
+  }
+
+  .hero__content {
+    max-width: 46rem;
+  }
+
+  .hero__eyebrow {
+    font-family: var(--font-ui);
+    font-size: var(--fs-caption);
+    font-weight: 500;
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--text-muted);
+    line-height: 1.6;
+    margin-block-end: var(--space-24);
+    animation: hero-rise var(--dur-entry) var(--ease-out) 120ms both;
+  }
+
+  .hero__headline {
+    font-size: var(--fs-display-l);
+    line-height: var(--lh-display);
+    color: var(--text-strong);
+  }
+
+  .hero__line {
+    display: block;
+    animation: hero-rise var(--dur-entry) var(--ease-out) both;
+  }
+
+  .hero__line:nth-child(1) { animation-delay: 200ms; }
+  .hero__line:nth-child(2) { animation-delay: 320ms; }
+  .hero__line:nth-child(3) { animation-delay: 440ms; }
+
+  .hero__line--accent {
+    color: var(--accent);
+  }
+
+  .hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-32);
+    margin-block-start: var(--space-40);
+    animation: hero-rise var(--dur-entry) var(--ease-out) 560ms both;
+  }
+
+  /* --- Proof strip -------------------------------------------------------- */
+  .hero__proof {
+    border-block-start: 1px solid var(--border-subtle);
+    background: rgba(9, 9, 8, 0.55);
+    animation: hero-rise var(--dur-entry) var(--ease-out) 680ms both;
+  }
+
+  .proof {
+    display: flex;
+    flex-wrap: wrap;
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+  }
+
+  .proof__item {
+    flex: 1 1 0;
+    min-width: 8rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding-block: var(--space-24);
+    padding-inline-end: var(--space-32);
+    border-inline-start: 1px solid var(--border-subtle);
+    padding-inline-start: var(--space-32);
+  }
+
+  .proof__item:first-child {
+    border-inline-start: none;
+    padding-inline-start: 0;
+  }
+
+  .proof__value {
+    font-family: var(--font-display);
+    font-size: var(--fs-heading-s);
+    color: var(--text-strong);
+    letter-spacing: 0;
+  }
+
+  .proof__label {
+    font-size: var(--fs-label);
+    font-weight: 500;
+    letter-spacing: var(--tracking-meta);
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  /* --- Mobile (Section 24) ------------------------------------------------ */
+  @media (max-width: 48rem) {
+    .hero__headline {
+      font-size: var(--fs-display-m);
+    }
+    .hero__scrim {
+      background:
+        linear-gradient(to top, rgba(9, 9, 8, 0.94) 0%, rgba(9, 9, 8, 0.1) 60%);
+    }
+    /* Horizontal-scroll the proof points rather than cramming them. */
+    .proof {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .proof::-webkit-scrollbar { display: none; }
+    .proof__item {
+      flex: 0 0 auto;
+      min-width: 9rem;
+    }
+  }
+
+  /* --- Entry motion (Section 18) ------------------------------------------ */
+  @keyframes hero-image-in {
+    from { opacity: 0; transform: scale(1.04); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  @keyframes hero-rise {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>

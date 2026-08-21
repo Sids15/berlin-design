@@ -1,0 +1,6 @@
+# safety-scan allowlist
+# One entry per line. Either a literal substring the matched text contains,
+# or a /regex/ the matched text must satisfy. Lines starting with # are ignored.
+#
+# Keep this list SHORT and justified — every entry weakens the scan.
+# (Nothing is allowlisted yet.)
