@@ -30,11 +30,19 @@ npm run scan:all  # safety scan of the whole repo
 All colors, type sizes, spacing, and motion live in `src/styles/tokens.css`.
 Sections consume these tokens — they never invent their own values.
 
-## Imagery
+## Where media goes
+
+- **Images / photography → `src/assets/<section>/`** — optimized at build
+  (AVIF + WebP + `srcset`). Commit the highest-quality original; the build
+  handles compression. See [`src/assets/README.md`](src/assets/README.md) for
+  the per-section folders and crops.
+- **Videos & static files → `public/videos/…`** — served as-is (Astro doesn't
+  transcode video). Reference by URL, e.g. `/videos/after-dark-loop.mp4`. See
+  [`public/videos/README.md`](public/videos/README.md).
 
 Photography currently uses **free-license placeholders** (Unsplash, no
-attribution required), clearly marked with `@swap` comments and structured so
-the final art-directed photography drops in with no code changes.
+attribution required), clearly marked with `@swap` comments so the final
+art-directed media drops in with no code changes.
 
 ## Safety scan
 
