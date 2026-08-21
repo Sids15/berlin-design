@@ -222,4 +222,7 @@ export function initAnimations(): void {
         });
     }
   }
+
+  // Recalculate all pins/triggers once images (which shift layout) have loaded.
+  window.addEventListener("load", () => ScrollTrigger.refresh());
 }

@@ -135,7 +135,9 @@ const year = new Date().getFullYear();
   .brandfoot__word {
     font-family: var(--font-display);
     font-weight: 400;
-    font-size: clamp(3rem, 15vw, 13rem);
+    /* Cap by viewport HEIGHT too, so the word always fits the reveal zone and
+       the panel stops just above it (no huge gap on short/wide viewports). */
+    font-size: clamp(2.5rem, min(15vw, 17vh), 13rem);
     line-height: 1;
     letter-spacing: -0.02em;
     white-space: nowrap;
