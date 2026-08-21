@@ -1,0 +1,133 @@
+---
+/**
+ * Open tabs (Feature: billing). Lists the tables with an open tab and a running
+ * total, so a server can pull up a table's collective bill. Behind the auth
+ * middleware; billing is for roles that take orders (manager, server).
+ */
+import AppLayout from "../../../layouts/AppLayout.astro";
+import { getOpenTabs } from "../../../lib/orders/tabs";
+import { formatINR } from "../../../lib/money";
+
+export const prerender = false;
+
+const { supabase, profile } = Astro.locals;
+if (profile!.role !== "manager" && profile!.role !== "server") {
+  return Astro.redirect("/staff", 302);
+}
+
+const tabs = await getOpenTabs(supabase);
+
+function when(iso: string): string {
+  try {
+    return new Date(iso).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+  } catch {
+    return "";
+  }
+}
+---
+
+<AppLayout title="Open tabs — Berlin">
+  <main class="tabs">
+    <header class="tabs__bar">
+      <div>
+        <p class="tabs__eyebrow">Berlin · Staff</p>
+        <h1 class="tabs__title">Open tabs</h1>
+      </div>
+      <a class="tabs__back" href="/staff">← Order desk</a>
+    </header>
+
+    {tabs.length === 0 ? (
+      <p class="tabs__empty">No open tabs. A tab opens when a table places its first order.</p>
+    ) : (
+      <ul class="tabs__list">
+        {tabs.map((t) => (
+          <li class="tabrow">
+            <a class="tabrow__link" href={`/staff/tabs/${t.id}`}>
+              <span class="tabrow__table">Table {t.table_label}</span>
+              <span class="tabrow__meta">
+                {t.order_count} {t.order_count === 1 ? "round" : "rounds"} · since {when(t.opened_at)}
+              </span>
+              <span class="tabrow__total">{formatINR(t.subtotal)}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    )}
+  </main>
+</AppLayout>
+
+<style>
+  .tabs {
+    max-width: var(--container-editorial);
+    margin-inline: auto;
+    padding: var(--space-32) var(--gutter) var(--space-64);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-24);
+  }
+  .tabs__bar {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-16);
+    padding-block-end: var(--space-24);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .tabs__eyebrow {
+    font-size: var(--fs-caption);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .tabs__title {
+    margin-block-start: var(--space-4);
+    font-family: var(--font-display);
+    font-size: var(--fs-display-s);
+    color: var(--text-strong);
+  }
+  .tabs__back {
+    font-size: var(--fs-caption);
+    letter-spacing: var(--tracking-meta);
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .tabs__back:hover {
+    color: var(--text-strong);
+  }
+  .tabs__empty {
+    padding-block: var(--space-48);
+    text-align: center;
+    color: var(--text-muted);
+  }
+  .tabs__list {
+    display: flex;
+    flex-direction: column;
+  }
+  .tabrow__link {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-16);
+    padding-block: var(--space-16);
+    border-bottom: 1px solid var(--border-subtle);
+    color: var(--text);
+  }
+  .tabrow__link:hover {
+    color: var(--text-strong);
+  }
+  .tabrow__table {
+    flex: 0 0 auto;
+    font-family: var(--font-display);
+    font-size: var(--fs-heading-s);
+    color: var(--text-strong);
+  }
+  .tabrow__meta {
+    flex: 1 1 auto;
+    font-size: var(--fs-caption);
+    color: var(--text-muted);
+  }
+  .tabrow__total {
+    flex: 0 0 auto;
+    font-variant-numeric: tabular-nums;
+    color: var(--accent);
+  }
+</style>

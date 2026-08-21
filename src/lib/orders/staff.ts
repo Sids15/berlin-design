@@ -22,6 +22,7 @@ export interface StaffOrder {
   source: OrderSource;
   subtotal: number;
   notes: string | null;
+  tab_id: string | null;
   created_at: string;
   confirmed_at: string | null;
   items: StaffOrderLine[];
@@ -81,7 +82,7 @@ export async function getStaffOrder(
   const { data, error } = await supabase
     .from("orders")
     .select(
-      "id, code, table_label, status, source, subtotal, notes, created_at, confirmed_at, " +
+      "id, code, table_label, status, source, subtotal, notes, tab_id, created_at, confirmed_at, " +
         "order_items ( name_snapshot, price_snapshot, qty, notes )",
     )
     .eq("code", code)
@@ -111,6 +112,7 @@ export async function getStaffOrder(
     source: data.source,
     subtotal: Number(data.subtotal),
     notes: data.notes,
+    tab_id: data.tab_id,
     created_at: data.created_at,
     confirmed_at: data.confirmed_at,
     items,

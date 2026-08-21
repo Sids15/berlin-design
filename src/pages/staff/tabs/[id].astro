@@ -1,0 +1,284 @@
+---
+/**
+ * Collective bill (Feature: billing) for one tab — every non-cancelled round's
+ * items merged, with GST + service charge. A server can Close the tab (mark
+ * paid) and Print. Behind the auth middleware; billing is manager/server. On
+ * screen it's a card on the dark app; @media print switches to black-on-white.
+ */
+import AppLayout from "../../../layouts/AppLayout.astro";
+import { getTabBill } from "../../../lib/orders/tabs";
+import { formatINR } from "../../../lib/money";
+import { SERVICE_RATE, GST_RATE } from "../../../lib/billing";
+
+export const prerender = false;
+
+const { supabase, profile } = Astro.locals;
+if (profile!.role !== "manager" && profile!.role !== "server") {
+  return Astro.redirect("/staff", 302);
+}
+
+const id = Astro.params.id ?? "";
+const bill = await getTabBill(supabase, id);
+if (!bill) Astro.response.status = 404;
+
+const params = Astro.url.searchParams;
+const justClosed = params.get("closed") === "1";
+const err = params.get("err");
+
+const pct = (r: number) => `${Math.round(r * 100)}%`;
+---
+
+<AppLayout title={bill ? `Bill · Table ${bill.table_label} — Berlin` : "Tab not found — Berlin"}>
+  <main class="billwrap">
+    {!bill ? (
+      <p class="billwrap__missing">That tab doesn't exist.</p>
+    ) : (
+      <>
+        <div class="actions no-print">
+          <a class="actions__back" href="/staff/tabs">← Open tabs</a>
+          <div class="actions__right">
+            {bill.status === "open" && (
+              <form method="post" action={`/api/staff/tabs/${bill.id}/close`}>
+                <button type="submit" class="actions__close">Close tab (paid)</button>
+              </form>
+            )}
+            <button id="print-btn" type="button" class="actions__print">Print bill</button>
+          </div>
+        </div>
+
+        {justClosed && <p class="flash no-print" role="status">Tab closed — marked paid.</p>}
+        {err && <p class="flash flash--err no-print" role="alert">{err}</p>}
+
+        <article class="bill">
+          <header class="bill__head">
+            <p class="bill__brand">BERLIN · Haus de Gourmet</p>
+            <p class="bill__kind">Bill</p>
+            <p class="bill__table">Table {bill.table_label}</p>
+            {bill.status === "closed" && <p class="bill__paid">PAID</p>}
+          </header>
+
+          <ul class="bill__lines">
+            {bill.lines.map((line) => (
+              <li class="bill__line">
+                <span class="bill__qty">{line.qty}×</span>
+                <span class="bill__name">{line.name}</span>
+                <span class="bill__amount">{formatINR(line.price * line.qty)}</span>
+              </li>
+            ))}
+          </ul>
+
+          <dl class="bill__totals">
+            <div><dt>Subtotal</dt><dd>{formatINR(bill.totals.subtotal)}</dd></div>
+            <div><dt>Service charge ({pct(SERVICE_RATE)})</dt><dd>{formatINR(bill.totals.service)}</dd></div>
+            <div><dt>GST ({pct(GST_RATE)})</dt><dd>{formatINR(bill.totals.gst)}</dd></div>
+            <div class="bill__grand"><dt>Total</dt><dd>{formatINR(bill.totals.total)}</dd></div>
+          </dl>
+
+          <p class="bill__foot">
+            {bill.round_count} {bill.round_count === 1 ? "round" : "rounds"} · Thank you
+          </p>
+        </article>
+      </>
+    )}
+  </main>
+</AppLayout>
+
+<script>
+  document.getElementById("print-btn")?.addEventListener("click", () => window.print());
+</script>
+
+<style>
+  .billwrap {
+    max-width: 26rem;
+    margin-inline: auto;
+    padding: var(--space-24) var(--gutter) var(--space-64);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-16);
+  }
+  .billwrap__missing {
+    padding-block: var(--space-64);
+    text-align: center;
+    color: var(--text-muted);
+  }
+  .actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-16);
+  }
+  .actions__right {
+    display: flex;
+    align-items: center;
+    gap: var(--space-12);
+  }
+  .actions__back {
+    font-size: var(--fs-caption);
+    letter-spacing: var(--tracking-meta);
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .actions__close {
+    min-height: 2.5rem;
+    padding-inline: var(--space-16);
+    background: none;
+    color: var(--text-muted);
+    border: 1px solid var(--border-subtle);
+    font: inherit;
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-nav);
+    cursor: pointer;
+  }
+  .actions__close:hover {
+    color: var(--text-strong);
+    border-color: var(--accent);
+  }
+  .actions__print {
+    min-height: 2.5rem;
+    padding-inline: var(--space-24);
+    background: var(--accent);
+    color: var(--color-warm-black);
+    border: none;
+    font: inherit;
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-nav);
+    cursor: pointer;
+  }
+  .flash {
+    padding: var(--space-12) var(--space-16);
+    font-size: var(--fs-caption);
+    border: 1px solid var(--accent);
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    color: var(--text-strong);
+  }
+  .flash--err {
+    border-color: var(--color-berlin-red);
+    background: color-mix(in srgb, var(--color-berlin-red) 14%, transparent);
+  }
+
+  .bill {
+    background: var(--color-ivory);
+    color: var(--color-warm-black);
+    padding: var(--space-32) var(--space-24);
+    font-family: var(--font-ui);
+  }
+  .bill__head {
+    text-align: center;
+    padding-block-end: var(--space-16);
+    border-bottom: 1px dashed #9a9184;
+  }
+  .bill__brand {
+    font-size: var(--fs-caption);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+  }
+  .bill__kind {
+    margin-block-start: var(--space-4);
+    font-family: var(--font-display);
+    font-size: var(--fs-heading-m);
+  }
+  .bill__table {
+    margin-block-start: var(--space-4);
+    font-size: var(--fs-caption);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-meta);
+    color: #5b544a;
+  }
+  .bill__paid {
+    margin-block-start: var(--space-8);
+    font-family: var(--font-display);
+    font-size: var(--fs-heading-s);
+    letter-spacing: 0.2em;
+    color: #4c8b4a;
+  }
+  .bill__lines {
+    display: flex;
+    flex-direction: column;
+    padding-block: var(--space-8);
+  }
+  .bill__line {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-16);
+    padding-block: var(--space-12);
+    border-bottom: 1px solid #e0d8c8;
+  }
+  .bill__qty {
+    flex: 0 0 auto;
+    font-variant-numeric: tabular-nums;
+  }
+  .bill__name {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .bill__amount {
+    flex: 0 0 auto;
+    font-variant-numeric: tabular-nums;
+  }
+  .bill__totals {
+    padding-block: var(--space-16);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+    border-top: 1px dashed #9a9184;
+  }
+  .bill__totals > div {
+    display: flex;
+    justify-content: space-between;
+    font-size: var(--fs-body);
+  }
+  .bill__totals dt {
+    color: #5b544a;
+  }
+  .bill__totals dd {
+    font-variant-numeric: tabular-nums;
+  }
+  .bill__grand {
+    margin-block-start: var(--space-8);
+    padding-block-start: var(--space-12);
+    border-top: 1px solid #9a9184;
+  }
+  .bill__grand dt,
+  .bill__grand dd {
+    font-family: var(--font-display);
+    font-size: var(--fs-heading-s);
+    color: var(--color-warm-black);
+  }
+  .bill__foot {
+    text-align: center;
+    padding-block-start: var(--space-16);
+    font-size: var(--fs-caption);
+    color: #5b544a;
+  }
+
+  @media print {
+    :global(body) {
+      background: #fff !important;
+    }
+    .billwrap {
+      max-width: none;
+      padding: 0;
+    }
+    .no-print {
+      display: none !important;
+    }
+    .bill {
+      background: #fff;
+      color: #000;
+      padding: 0;
+    }
+    .bill__head,
+    .bill__totals,
+    .bill__grand {
+      border-color: #000;
+    }
+    .bill__line {
+      border-color: #ccc;
+    }
+    .bill__table,
+    .bill__totals dt,
+    .bill__foot {
+      color: #333;
+    }
+  }
+</style>
