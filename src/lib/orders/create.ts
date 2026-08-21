@@ -1,14 +1,19 @@
 /**
- * createOrder — the ONLY path a customer order enters the database. Runs
- * server-side (API route) with the service-role client, because customers have
- * no direct access to the `orders` tables under RLS.
+ * createOrder — the ONLY path an order enters the database. Runs server-side
+ * (API route) with the service-role client, because neither customers nor the
+ * browser have direct access to the `orders` tables under RLS.
  *
- * The client cart is never trusted: every line is re-read from `menu_items` for
- * its *current* price and availability. Names and prices are snapshotted onto
- * the order line so a later menu edit can't rewrite history.
+ * The submitted lines are never trusted: every line is re-read from `menu_items`
+ * for its *current* price and availability. Names and prices are snapshotted
+ * onto the order line so a later menu edit can't rewrite history.
+ *
+ * Customer orders start `pending` (default). A server building an order passes
+ * { source: "server", autoConfirm: true, confirmedBy } to have it land already
+ * `confirmed` — skipping the accept step, since the server is the one taking it.
  */
 import { supabaseAdmin } from "../supabase/admin";
 import { generateOrderCode } from "./code";
+import type { OrderSource } from "../types";
 
 /** One line as the client submits it — item id + quantity, nothing priced. */
 export interface CreateOrderLine {
@@ -27,6 +32,15 @@ export type CreateOrderResult =
   | { ok: true; code: string }
   | { ok: false; error: string };
 
+/** How the order enters the system. Defaults produce a pending customer order. */
+export interface CreateOrderOptions {
+  source?: OrderSource;
+  /** Land the order already `confirmed` (a server taking it directly). */
+  autoConfirm?: boolean;
+  /** Staff user id credited as confirming it, when autoConfirm. */
+  confirmedBy?: string | null;
+}
+
 const MAX_QTY_PER_LINE = 50;
 // Upper bound on distinct cart lines. The menu is ~20 items, so anything past
 // this is a malformed or hostile client — reject before it becomes a big
@@ -36,7 +50,10 @@ const CODE_RETRIES = 5;
 
 export async function createOrder(
   input: CreateOrderInput,
+  opts: CreateOrderOptions = {},
 ): Promise<CreateOrderResult> {
+  const source: OrderSource = opts.source ?? "customer";
+  const autoConfirm = opts.autoConfirm ?? false;
   const lines = Array.isArray(input.lines) ? input.lines : [];
   if (lines.length === 0) return { ok: false, error: "Your cart is empty." };
   if (lines.length > MAX_LINES) {
@@ -108,10 +125,13 @@ export async function createOrder(
       .insert({
         code,
         table_label,
-        status: "pending",
-        source: "customer",
+        status: autoConfirm ? "confirmed" : "pending",
+        source,
         subtotal,
         notes,
+        ...(autoConfirm
+          ? { confirmed_at: new Date().toISOString(), confirmed_by: opts.confirmedBy ?? null }
+          : {}),
       })
       .select("id")
       .single();

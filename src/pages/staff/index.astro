@@ -53,6 +53,7 @@ function when(iso: string): string {
         <h1 class="staff__title">Order desk</h1>
       </div>
       <div class="staff__who">
+        {canTake && <a class="staff__build" href="/staff/new">+ Build order</a>}
         <span class="staff__name">{profile!.name || "Staff"}</span>
         <span class="staff__role">{profile!.role}</span>
         <form method="post" action="/api/auth/logout">
@@ -82,7 +83,11 @@ function when(iso: string): string {
 
     {ok && (
       <p class="flash flash--ok" role="status">
-        {ok === "confirmed" ? `Order ${rawCode} confirmed — the table has been told.` : `Order ${rawCode} cancelled.`}
+        {ok === "confirmed"
+          ? `Order ${rawCode} confirmed — the table has been told.`
+          : ok === "created"
+            ? `Order ${rawCode} created and confirmed.`
+            : `Order ${rawCode} cancelled.`}
       </p>
     )}
     {err && <p class="flash flash--err" role="alert">{err}</p>}
@@ -198,6 +203,17 @@ function when(iso: string): string {
     letter-spacing: var(--tracking-meta);
     text-transform: uppercase;
     color: var(--accent);
+  }
+  .staff__build {
+    padding: var(--space-4) var(--space-12);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    letter-spacing: var(--tracking-meta);
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .staff__build:hover {
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
   }
   .staff__signout {
     background: none;

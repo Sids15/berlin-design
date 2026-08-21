@@ -1,0 +1,255 @@
+---
+/**
+ * Manual order builder (Feature 4b). A server (or manager) builds an order at
+ * the table — set a table label, dial in quantities, add a note — and it lands
+ * already confirmed. Plain server-rendered form (no island): posts qty_<id>
+ * fields to /api/staff/orders/new. Behind the auth middleware, and additionally
+ * restricted to roles that take orders.
+ */
+import AppLayout from "../../layouts/AppLayout.astro";
+import { getCustomerMenu } from "../../lib/menu/queries";
+import { formatINR } from "../../lib/money";
+
+export const prerender = false;
+
+const { profile } = Astro.locals;
+
+// Kitchen may see orders but not take them — send them back to the console.
+if (profile!.role !== "manager" && profile!.role !== "server") {
+  return Astro.redirect("/staff", 302);
+}
+
+const menu = await getCustomerMenu();
+const err = Astro.url.searchParams.get("err");
+const ERROR_COPY: Record<string, string> = {
+  empty: "Add at least one dish before creating the order.",
+};
+const errorText = err ? (ERROR_COPY[err] ?? err) : null;
+---
+
+<AppLayout title="Build an order — Berlin">
+  <main class="build">
+    <header class="build__bar">
+      <div>
+        <p class="build__eyebrow">Berlin · Staff</p>
+        <h1 class="build__title">Build an order</h1>
+      </div>
+      <a class="build__back" href="/staff">← Order desk</a>
+    </header>
+
+    {errorText && <p class="flash flash--err" role="alert">{errorText}</p>}
+
+    {!menu.ok ? (
+      <p class="build__note">The menu couldn't be loaded right now. Please try again.</p>
+    ) : menu.categories.length === 0 ? (
+      <p class="build__note">There are no available dishes to add right now.</p>
+    ) : (
+      <form class="build__form" method="post" action="/api/staff/orders/new">
+        <div class="build__meta">
+          <label class="field">
+            <span class="field__label">Table</span>
+            <input class="field__input" type="text" name="table_label" placeholder="e.g. 12" autocomplete="off" />
+          </label>
+          <label class="field">
+            <span class="field__label">Order note (optional)</span>
+            <input class="field__input" type="text" name="notes" placeholder="Allergies, timing…" maxlength="280" />
+          </label>
+        </div>
+
+        {menu.categories.map((c) => (
+          <section class="build__cat">
+            <h2 class="build__catname">{c.name}</h2>
+            <ul class="build__list">
+              {c.items.map((item) => (
+                <li class="build__item">
+                  <div class="build__itemmeta">
+                    <span class="build__itemname">{item.name}</span>
+                    <span class="build__itemprice">{formatINR(Number(item.price))}</span>
+                  </div>
+                  <input
+                    class="build__qty"
+                    type="number"
+                    name={`qty_${item.id}`}
+                    min="0"
+                    max="50"
+                    step="1"
+                    value="0"
+                    inputmode="numeric"
+                    aria-label={`Quantity of ${item.name}`}
+                  />
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
+
+        <div class="build__submitbar">
+          <button class="build__submit" type="submit">Create &amp; confirm order</button>
+        </div>
+      </form>
+    )}
+  </main>
+</AppLayout>
+
+<style>
+  .build {
+    max-width: var(--container-editorial);
+    margin-inline: auto;
+    padding: var(--space-32) var(--gutter) var(--space-96);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-24);
+  }
+  .build__bar {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-16);
+    padding-block-end: var(--space-24);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .build__eyebrow {
+    font-size: var(--fs-caption);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .build__title {
+    margin-block-start: var(--space-4);
+    font-family: var(--font-display);
+    font-size: var(--fs-display-s);
+    color: var(--text-strong);
+  }
+  .build__back {
+    font-size: var(--fs-caption);
+    letter-spacing: var(--tracking-meta);
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .build__back:hover {
+    color: var(--text-strong);
+  }
+  .build__note {
+    padding-block: var(--space-32);
+    text-align: center;
+    color: var(--text-muted);
+  }
+  .flash--err {
+    padding: var(--space-12) var(--space-16);
+    font-size: var(--fs-caption);
+    border: 1px solid var(--color-berlin-red);
+    background: color-mix(in srgb, var(--color-berlin-red) 14%, transparent);
+    color: var(--text-strong);
+  }
+
+  .build__form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-32);
+  }
+  .build__meta {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: var(--space-16);
+  }
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+  }
+  .field__label {
+    font-size: var(--fs-caption);
+    letter-spacing: var(--tracking-meta);
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .field__input {
+    padding: var(--space-12) var(--space-16);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-strong);
+    font: inherit;
+  }
+  .field__input:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  .build__catname {
+    font-family: var(--font-display);
+    font-size: var(--fs-heading-m);
+    color: var(--text-strong);
+    padding-block-end: var(--space-12);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .build__list {
+    display: flex;
+    flex-direction: column;
+  }
+  .build__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-16);
+    padding-block: var(--space-16);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .build__itemmeta {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    min-width: 0;
+  }
+  .build__itemname {
+    color: var(--text-strong);
+  }
+  .build__itemprice {
+    font-size: var(--fs-caption);
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .build__qty {
+    flex: 0 0 auto;
+    width: 4.5rem;
+    height: 2.75rem;
+    padding-inline: var(--space-12);
+    text-align: center;
+    font: inherit;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-strong);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
+  }
+  .build__qty:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  .build__submitbar {
+    position: sticky;
+    inset-block-end: 0;
+    padding-block: var(--space-16);
+    background: var(--color-void);
+    border-top: 1px solid var(--border-subtle);
+  }
+  .build__submit {
+    width: 100%;
+    min-height: var(--btn-height);
+    background: var(--accent);
+    color: var(--color-warm-black);
+    border: none;
+    font: inherit;
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-nav);
+    cursor: pointer;
+  }
+  .build__submit:hover {
+    opacity: 0.9;
+  }
+
+  @media (max-width: 30rem) {
+    .build__meta {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
