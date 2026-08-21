@@ -12,29 +12,44 @@ import { getCustomerMenu } from "../../lib/menu/queries";
 export const prerender = false;
 
 const table = Astro.url.searchParams.get("table");
-const menu = await getCustomerMenu();
+const result = await getCustomerMenu();
+
+// Three distinct outcomes: couldn't reach the menu, reached-but-empty, or a
+// real menu to render. Never let the first masquerade as the second.
+const failed = !result.ok;
 
 // Shape down to just what the island needs (no server-only fields cross over).
-const categories = menu.map((c) => ({
-  id: c.id,
-  name: c.name,
-  items: c.items.map((i) => ({
-    id: i.id,
-    name: i.name,
-    description: i.description,
-    price: Number(i.price),
-    veg_type: i.veg_type,
-    tags: i.tags,
-    is_signature: i.is_signature,
-  })),
-}));
+const categories = result.ok
+  ? result.categories.map((c) => ({
+      id: c.id,
+      name: c.name,
+      items: c.items.map((i) => ({
+        id: i.id,
+        name: i.name,
+        description: i.description,
+        price: Number(i.price),
+        veg_type: i.veg_type,
+        tags: i.tags,
+        is_signature: i.is_signature,
+      })),
+    }))
+  : [];
 
-const isEmpty = categories.length === 0;
+const isEmpty = result.ok && categories.length === 0;
 ---
 
 <AppLayout title="Menu — Berlin">
   {
-    isEmpty ? (
+    failed ? (
+      <main class="menu-empty">
+        <p class="menu-empty__eyebrow">Berlin · Haus de Gourmet</p>
+        <h1 class="menu-empty__title">We couldn't load the menu</h1>
+        <p class="menu-empty__note">
+          Something went wrong on our side. Please try again in a moment.
+        </p>
+        <a class="menu-empty__retry" href={Astro.url.pathname + Astro.url.search}>Try again</a>
+      </main>
+    ) : isEmpty ? (
       <main class="menu-empty">
         <p class="menu-empty__eyebrow">Berlin · Haus de Gourmet</p>
         <h1 class="menu-empty__title">The menu is being set</h1>
@@ -76,5 +91,14 @@ const isEmpty = categories.length === 0;
   .menu-empty__note {
     margin: var(--space-24) auto 0;
     color: var(--text-muted);
+  }
+  .menu-empty__retry {
+    margin: var(--space-24) auto 0;
+    font-size: var(--fs-caption);
+    letter-spacing: var(--tracking-nav);
+    text-transform: uppercase;
+    color: var(--accent);
+    border-bottom: 1px solid var(--accent-muted);
+    padding-block-end: var(--space-4);
   }
 </style>
