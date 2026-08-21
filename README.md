@@ -44,6 +44,20 @@ Photography currently uses **free-license placeholders** (Unsplash, no
 attribution required), clearly marked with `@swap` comments so the final
 art-directed media drops in with no code changes.
 
+### Hero footage → scroll-scrubbed frames
+
+The hero scrubs a **WebP frame sequence** on a canvas (smooth on every device;
+no video-seek jank). To (re)generate frames from the source clip:
+
+```bash
+# put the source clip at media-src/hero-pour.mp4, then:
+npm run frames        # → public/videos/hero/frames/frame-0001.webp …
+```
+
+Update `FRAME_COUNT` in `src/components/sections/Hero.astro` if the count
+changes. Tune count/width/quality at the top of `scripts/extract-frames.mjs`.
+The source clip lives in `media-src/` (not shipped); only the frames ship.
+
 ## Safety scan
 
 `scripts/safety-scan.mjs` runs before every commit and blocks it if it finds
