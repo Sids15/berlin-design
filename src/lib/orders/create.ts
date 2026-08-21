@@ -28,6 +28,10 @@ export type CreateOrderResult =
   | { ok: false; error: string };
 
 const MAX_QTY_PER_LINE = 50;
+// Upper bound on distinct cart lines. The menu is ~20 items, so anything past
+// this is a malformed or hostile client — reject before it becomes a big
+// `.in(...)` query and bulk insert. Not a UX limit; it's far above any real order.
+const MAX_LINES = 100;
 const CODE_RETRIES = 5;
 
 export async function createOrder(
@@ -35,6 +39,9 @@ export async function createOrder(
 ): Promise<CreateOrderResult> {
   const lines = Array.isArray(input.lines) ? input.lines : [];
   if (lines.length === 0) return { ok: false, error: "Your cart is empty." };
+  if (lines.length > MAX_LINES) {
+    return { ok: false, error: "That order didn't look right — please try again." };
+  }
 
   // Collapse duplicate item ids and sanity-check quantities.
   const wanted = new Map<string, number>();
