@@ -109,6 +109,11 @@ p {
 main {
   display: block;
   overflow-x: clip;
+  position: relative;
+  z-index: 0;
+  /* Opaque, so the fixed footer wordmark stays hidden behind the sections
+     until the footer's scroll gap uncovers it. */
+  background-color: var(--color-void);
 }
 
 .container {

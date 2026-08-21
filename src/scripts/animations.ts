@@ -95,24 +95,6 @@ export function initAnimations(): void {
     );
   });
 
-  // --- Footer wordmark: revealed bottom-to-top as the panel scrolls up ------
-  gsap.utils.toArray<HTMLElement>("[data-footer-reveal]").forEach((el) => {
-    gsap.fromTo(
-      el,
-      { clipPath: "inset(100% 0% 0% 0%)" },
-      {
-        clipPath: "inset(0% 0% 0% 0%)",
-        ease: "none",
-        scrollTrigger: {
-          trigger: el,
-          start: "top bottom",
-          end: "bottom bottom",
-          scrub: true,
-        },
-      }
-    );
-  });
-
   // --- Count-up -------------------------------------------------------------
   gsap.utils.toArray<HTMLElement>("[data-count]").forEach((el) => {
     const target = Number(el.dataset.count) || 0;
