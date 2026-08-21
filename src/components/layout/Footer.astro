@@ -83,8 +83,12 @@ const year = new Date().getFullYear();
 <style>
   .brandfoot {
     position: relative;
-    background-color: var(--color-void);
-    --reveal-h: min(40vh, 17rem);
+    /* Transparent — so the fixed wordmark behind shows through the scroll gap
+       and the panel's rounded corners, instead of a black layer over it. */
+    background-color: transparent;
+    /* Snug to the wordmark's own height (SVG is ~14% of its width) so the page
+       stops scrolling exactly when BERLIN is fully revealed. */
+    --reveal-h: clamp(3.5rem, 14.5vw, 13.5rem);
   }
 
   .footer {
@@ -200,8 +204,9 @@ const year = new Date().getFullYear();
     z-index: -1;
     height: var(--reveal-h);
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     padding-inline: var(--gutter);
+    padding-block-end: clamp(0.5rem, 2vh, 1.5rem);
     background-color: #d9d0bf; /* warm light reveal base */
     color: var(--color-berlin-red);
     line-height: 0;
