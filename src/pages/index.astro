@@ -1,13 +1,15 @@
 ---
 /**
  * Home — the single-page arrival → night journey.
- * Sections are added feature by feature; Feature 1 lays the foundation and
- * the Hero, which the rest of the page inherits from.
+ * Built feature by feature: the hero pours and freezes, then the site flows
+ * on through the evening.
  */
 import BaseLayout from "../layouts/BaseLayout.astro";
 import Header from "../components/layout/Header.astro";
 import SectionIndex from "../components/layout/SectionIndex.astro";
 import Hero from "../components/sections/Hero.astro";
+import Experience from "../components/sections/Experience.astro";
+import Rooftop from "../components/sections/Rooftop.astro";
 ---
 
 <BaseLayout>
@@ -15,5 +17,7 @@ import Hero from "../components/sections/Hero.astro";
   <SectionIndex />
   <main>
     <Hero />
+    <Experience />
+    <Rooftop />
   </main>
 </BaseLayout>

@@ -1,0 +1,118 @@
+---
+/**
+ * The Rooftop (Sections 20, 21) — full-bleed cinematic. City + night, with a
+ * kinetic caption anchored bottom-left. A visual reset after the editorial split.
+ *
+ * PLACEHOLDER IMAGE: free-license (Unsplash), marked @swap.
+ */
+import { Picture } from "astro:assets";
+import SectionLabel from "../ui/SectionLabel.astro";
+import Button from "../ui/Button.astro";
+// @swap: final rooftop photograph (rooftop + city + tables + depth, wide).
+import rooftop from "../../assets/rooftop/rooftop-city-night.jpg";
+---
+
+<section id="rooftop" class="roof mode-night" data-journey-section>
+  <div class="roof__media" aria-hidden="true">
+    <Picture
+      src={rooftop}
+      formats={["avif", "webp"]}
+      fallbackFormat="jpg"
+      alt=""
+      widths={[900, 1400, 2000, 2400]}
+      sizes="100vw"
+      loading="lazy"
+      class="roof__image"
+    />
+    <div class="roof__scrim"></div>
+  </div>
+
+  <div class="roof__inner container--xl">
+    <div class="roof__caption">
+      <SectionLabel index="02" data-reveal>The Rooftop</SectionLabel>
+      <h2 class="roof__headline" data-reveal>
+        Above the city,<br />where sunsets<br /><em>turn into stories.</em>
+      </h2>
+      <p class="roof__copy" data-reveal>
+        Open sky, low light, and the skyline for company. The rooftop is where
+        the evening slows down and the night begins.
+      </p>
+      <div data-reveal>
+        <Button href="#menu" variant="secondary">View the menu</Button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .roof {
+    position: relative;
+    min-height: 100svh;
+    display: flex;
+    align-items: flex-end;
+    overflow: hidden;
+    isolation: isolate;
+    background-color: var(--color-void);
+  }
+
+  .roof__media {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+  }
+
+  .roof__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: brightness(0.82) contrast(1.05) saturate(0.94);
+    transform: scale(1.06);
+    animation: roof-drift 18s ease-in-out infinite alternate;
+  }
+
+  .roof__scrim {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background:
+      linear-gradient(to top, var(--color-void) 4%, rgba(9, 9, 8, 0.15) 45%, rgba(9, 9, 8, 0.55) 100%),
+      linear-gradient(to right, rgba(9, 9, 8, 0.7) 0%, rgba(9, 9, 8, 0) 55%);
+  }
+
+  .roof__inner {
+    width: 100%;
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+    padding-block-end: clamp(4rem, 12vh, 9rem);
+  }
+
+  .roof__caption {
+    max-width: 40rem;
+  }
+
+  .roof__headline {
+    margin-block-start: var(--space-24);
+    font-family: var(--font-display);
+    font-size: var(--fs-display-m);
+    line-height: 1.03;
+    letter-spacing: var(--tracking-display);
+    color: var(--text-strong);
+  }
+  .roof__headline em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .roof__copy {
+    margin-block: var(--space-32);
+    max-width: 30rem;
+    font-size: var(--fs-body-l);
+    line-height: var(--lh-body);
+    color: var(--text-muted);
+  }
+
+  @keyframes roof-drift {
+    from { transform: scale(1.06) translate3d(0, 0, 0); }
+    to { transform: scale(1.12) translate3d(-1.5%, -1.5%, 0); }
+  }
+</style>
