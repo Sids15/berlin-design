@@ -1,15 +1,22 @@
 ---
 /**
- * The Rooftop (Sections 20, 21) — full-bleed cinematic. City + night, with a
- * kinetic caption anchored bottom-left. A visual reset after the editorial split.
- *
- * PLACEHOLDER IMAGE: free-license (Unsplash), marked @swap.
+ * The Rooftop (02) — cinematic full-bleed, golden-hour. A large kinetic
+ * headline anchored low, a rotated editorial side-label, a warm horizon glow,
+ * and a full-width feature bar at the base. Deliberately unlike the editorial
+ * split above it.
+ * PLACEHOLDER IMAGE: free-license (Unsplash), @swap.
  */
 import { Picture } from "astro:assets";
-import SectionLabel from "../ui/SectionLabel.astro";
 import Button from "../ui/Button.astro";
 // @swap: final rooftop photograph (rooftop + city + tables + depth, wide).
 import rooftop from "../../assets/rooftop/rooftop-city-night.jpg";
+
+const features = [
+  { value: "Open Sky", label: "Al fresco dining" },
+  { value: "Golden Hour", label: "Sunsets, nightly" },
+  { value: "City Skyline", label: "Vijay Nagar below" },
+  { value: "The Terrace", label: "Level 06" },
+];
 ---
 
 <section id="rooftop" class="roof mode-night" data-journey-section>
@@ -26,22 +33,36 @@ import rooftop from "../../assets/rooftop/rooftop-city-night.jpg";
       data-parallax="0.12"
     />
     <div class="roof__scrim"></div>
+    <div class="roof__glow"></div>
   </div>
 
-  <div class="roof__inner container--xl">
-    <div class="roof__caption">
-      <SectionLabel index="02" data-reveal>The Rooftop</SectionLabel>
+  <span class="roof__side" aria-hidden="true">02 — The Rooftop</span>
+
+  <div class="roof__body">
+    <div class="roof__lead container--xl">
+      <p class="roof__eyebrow" data-reveal>Above the city</p>
       <h2 class="roof__headline" data-split>
-        Above the city,<br />where sunsets<br /><em>turn into stories.</em>
+        Where sunsets<br />turn into<br /><em>stories.</em>
       </h2>
-      <p class="roof__copy" data-reveal>
-        Open sky, low light, and the skyline for company. The rooftop is where
-        the evening slows down and the night begins.
-      </p>
-      <div data-reveal>
-        <Button href="#menu" variant="secondary">View the menu</Button>
+      <div class="roof__aside">
+        <p class="roof__copy" data-reveal>
+          Open sky, low light, and the skyline for company. Six floors up, the
+          evening slows down — and the night begins.
+        </p>
+        <div data-reveal>
+          <Button href="#menu" variant="secondary">View the menu</Button>
+        </div>
       </div>
     </div>
+
+    <ul class="roof__features container--xl" data-reveal>
+      {features.map((f) => (
+        <li class="roof__feature">
+          <span class="roof__feature-value">{f.value}</span>
+          <span class="roof__feature-label">{f.label}</span>
+        </li>
+      ))}
+    </ul>
   </div>
 </section>
 
@@ -50,64 +71,143 @@ import rooftop from "../../assets/rooftop/rooftop-city-night.jpg";
     position: relative;
     min-height: 100svh;
     display: flex;
-    align-items: flex-end;
+    flex-direction: column;
+    justify-content: flex-end;
     overflow: hidden;
     isolation: isolate;
     background-color: var(--color-void);
   }
 
-  .roof__media {
-    position: absolute;
-    inset: 0;
-    z-index: -2;
-  }
-
+  .roof__media { position: absolute; inset: 0; z-index: -2; }
   .roof__image {
     width: 100%;
     height: 124%;
     margin-block-start: -12%;
     object-fit: cover;
-    filter: brightness(0.82) contrast(1.05) saturate(0.94);
+    filter: brightness(0.8) contrast(1.06) saturate(1.02);
   }
-
   .roof__scrim {
     position: absolute;
     inset: 0;
-    z-index: -1;
     background:
-      linear-gradient(to top, var(--color-void) 4%, rgba(9, 9, 8, 0.15) 45%, rgba(9, 9, 8, 0.55) 100%),
-      linear-gradient(to right, rgba(9, 9, 8, 0.7) 0%, rgba(9, 9, 8, 0) 55%);
+      linear-gradient(to top, var(--color-void) 3%, rgba(9, 9, 8, 0.15) 42%, rgba(9, 9, 8, 0.55) 100%),
+      linear-gradient(to right, rgba(9, 9, 8, 0.6) 0%, rgba(9, 9, 8, 0) 55%);
+  }
+  /* Warm horizon glow — golden hour, kept subtle (§16). */
+  .roof__glow {
+    position: absolute;
+    inset: 0;
+    mix-blend-mode: screen;
+    background: radial-gradient(90% 55% at 68% 72%, rgba(180, 154, 99, 0.22) 0%, rgba(180, 154, 99, 0) 60%);
   }
 
-  .roof__inner {
+  /* Rotated editorial side-label */
+  .roof__side {
+    position: absolute;
+    z-index: 1;
+    inset-inline-end: clamp(1rem, 3vw, 2.5rem);
+    inset-block-start: 50%;
+    transform: translateY(-50%) rotate(180deg);
+    writing-mode: vertical-rl;
+    font-size: var(--fs-label);
+    font-weight: 500;
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .roof__body {
+    position: relative;
+    z-index: 1;
     width: 100%;
+  }
+
+  .roof__lead {
     margin-inline: auto;
     padding-inline: var(--gutter);
-    padding-block-end: clamp(4rem, 12vh, 9rem);
+    padding-block-end: clamp(2.5rem, 6vh, 4.5rem);
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: clamp(1.5rem, 4vw, 3rem);
+    align-items: end;
   }
 
-  .roof__caption {
-    max-width: 40rem;
-  }
-
-  .roof__headline {
-    margin-block-start: var(--space-24);
-    font-family: var(--font-display);
-    font-size: var(--fs-display-m);
-    line-height: 1.03;
-    letter-spacing: var(--tracking-display);
-    color: var(--text-strong);
-  }
-  .roof__headline em {
-    font-style: italic;
+  .roof__eyebrow {
+    grid-column: 1 / -1;
+    font-size: var(--fs-caption);
+    font-weight: 500;
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
     color: var(--accent);
   }
 
+  .roof__headline {
+    font-family: var(--font-display);
+    font-size: var(--fs-display-l);
+    line-height: 0.98;
+    letter-spacing: var(--tracking-display);
+    color: var(--text-strong);
+  }
+  .roof__headline em { font-style: italic; color: var(--accent); }
+
+  .roof__aside {
+    max-width: 26rem;
+  }
   .roof__copy {
-    margin-block: var(--space-32);
-    max-width: 30rem;
+    margin-block-end: var(--space-32);
     font-size: var(--fs-body-l);
     line-height: var(--lh-body);
     color: var(--text-muted);
+  }
+
+  /* Feature bar across the base */
+  .roof__features {
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+    display: flex;
+    flex-wrap: wrap;
+    border-block-start: 1px solid var(--border-subtle);
+  }
+  .roof__feature {
+    flex: 1 1 10rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding-block: clamp(1.25rem, 3vh, 2rem);
+    padding-inline-end: var(--space-32);
+    border-inline-start: 1px solid var(--border-subtle);
+    padding-inline-start: var(--space-32);
+  }
+  .roof__feature:first-child { border-inline-start: none; padding-inline-start: 0; }
+  .roof__feature-value {
+    font-family: var(--font-display);
+    font-size: var(--fs-heading-s);
+    color: var(--text-strong);
+  }
+  .roof__feature-label {
+    font-size: var(--fs-label);
+    font-weight: 500;
+    letter-spacing: var(--tracking-meta);
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  @media (min-width: 60rem) {
+    .roof__lead {
+      grid-template-columns: 1.3fr 1fr;
+    }
+    .roof__aside { padding-block-end: 0.5rem; }
+  }
+
+  @media (max-width: 48rem) {
+    .roof__headline { font-size: var(--fs-display-m); }
+    .roof__side { display: none; }
+    .roof__features {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .roof__features::-webkit-scrollbar { display: none; }
+    .roof__feature { flex: 0 0 auto; min-width: 9rem; }
   }
 </style>
