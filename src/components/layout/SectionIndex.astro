@@ -55,6 +55,17 @@ import { journey } from "../../data/site";
   document
     .querySelectorAll<HTMLElement>("[data-journey-section]")
     .forEach((section) => observer.observe(section));
+
+  // Hide the rail once the footer comes into view — the journey is over, and
+  // it should never float over the light footer panel.
+  const rail = document.querySelector<HTMLElement>(".section-index");
+  const footer = document.querySelector<HTMLElement>(".brandfoot");
+  if (rail && footer) {
+    new IntersectionObserver(
+      ([entry]) => rail.classList.toggle("is-hidden", entry.isIntersecting),
+      { threshold: 0 }
+    ).observe(footer);
+  }
 </script>
 
 <style>
@@ -64,6 +75,12 @@ import { journey } from "../../data/site";
     inset-block-start: 50%;
     transform: translateY(-50%);
     z-index: var(--z-header);
+    transition: opacity 0.5s var(--ease-out);
+  }
+
+  .section-index.is-hidden {
+    opacity: 0;
+    pointer-events: none;
   }
 
   .section-index__list {
