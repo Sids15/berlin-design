@@ -1,0 +1,148 @@
+---
+/**
+ * Footer (§20) — minimal utility. Wordmark, quick links, hours, address, social.
+ */
+import { brand, nav, contact, social } from "../../data/site";
+const year = new Date().getFullYear();
+---
+
+<footer class="footer mode-night">
+  <div class="footer__inner container--xl">
+    <div class="footer__brand">
+      <a class="footer__wordmark" href="#top" aria-label={`${brand.name}, ${brand.tagline}`}>
+        <span class="footer__name">{brand.name}</span>
+        <span class="footer__tagline">{brand.tagline}</span>
+      </a>
+    </div>
+
+    <nav class="footer__col" aria-label="Sections">
+      <h2 class="footer__heading">Explore</h2>
+      <ul>
+        {nav.map((item) => (
+          <li><a href={item.href}>{item.label}</a></li>
+        ))}
+      </ul>
+    </nav>
+
+    <div class="footer__col">
+      <h2 class="footer__heading">Visit</h2>
+      <address class="footer__address">
+        {contact.address.line1}<br />
+        {contact.address.line2}<br />
+        {contact.address.line3}
+      </address>
+      <p class="footer__hours">{contact.hours}</p>
+      <a class="footer__phone" href={contact.phoneHref}>{contact.phoneDisplay}</a>
+    </div>
+
+    <div class="footer__col">
+      <h2 class="footer__heading">Follow</h2>
+      <ul>
+        {social.map((s) => (
+          <li><a href={s.href} target="_blank" rel="noopener">{s.label}</a></li>
+        ))}
+      </ul>
+    </div>
+  </div>
+
+  <div class="footer__base container--xl">
+    <p class="footer__copy">© {year} {brand.name} {brand.tagline}. All rights reserved.</p>
+    <p class="footer__legal">
+      <a href="#top">Privacy Policy</a>
+      <span aria-hidden="true">·</span>
+      <a href="#top">Terms &amp; Conditions</a>
+    </p>
+  </div>
+</footer>
+
+<style>
+  .footer {
+    background-color: var(--color-charcoal);
+    color: var(--text);
+    padding-block: clamp(4rem, 8vw, 6rem) var(--space-32);
+    border-block-start: 1px solid var(--border-subtle);
+  }
+
+  .footer__inner {
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: clamp(2.5rem, 5vw, 4rem);
+  }
+
+  .footer__wordmark { display: flex; flex-direction: column; line-height: 1; color: var(--text-strong); }
+  .footer__name { font-family: var(--font-display); font-size: 1.75rem; letter-spacing: 0.14em; }
+  .footer__tagline {
+    font-size: var(--fs-label);
+    font-weight: 500;
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-block-start: 0.4rem;
+  }
+
+  .footer__heading {
+    font-family: var(--font-ui);
+    font-size: var(--fs-label);
+    font-weight: 600;
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-block-end: var(--space-24);
+  }
+
+  .footer__col ul { display: flex; flex-direction: column; gap: var(--space-12); }
+  .footer__col a {
+    font-size: var(--fs-caption);
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    transition: color 0.3s var(--ease-out);
+  }
+  .footer__col a:hover { color: var(--accent); }
+
+  .footer__address {
+    font-style: normal;
+    font-size: var(--fs-caption);
+    line-height: 1.7;
+    color: var(--text-muted);
+  }
+  .footer__hours {
+    margin-block-start: var(--space-16);
+    font-size: var(--fs-caption);
+    color: var(--text-muted);
+  }
+  .footer__phone {
+    display: inline-block;
+    margin-block-start: var(--space-16);
+    font-family: var(--font-display);
+    font-size: var(--fs-heading-s);
+    color: var(--text-strong);
+  }
+  .footer__phone:hover { color: var(--accent); }
+
+  .footer__base {
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+    margin-block-start: clamp(3rem, 6vw, 5rem);
+    padding-block-start: var(--space-24);
+    border-block-start: 1px solid var(--border-subtle);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--space-16);
+  }
+  .footer__copy,
+  .footer__legal {
+    font-size: var(--fs-label);
+    letter-spacing: var(--tracking-meta);
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .footer__legal { display: flex; gap: var(--space-12); }
+  .footer__legal a:hover { color: var(--accent); }
+
+  @media (min-width: 48rem) {
+    .footer__inner { grid-template-columns: 1.4fr 1fr 1.2fr 1fr; }
+  }
+</style>

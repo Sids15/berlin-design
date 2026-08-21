@@ -1,0 +1,102 @@
+---
+/**
+ * The Bar (04) — dark product composition. Reuses a branded-glass frame from
+ * the hero pour as the product shot (a deliberate callback), text on the left.
+ * The frame is an already-optimized public asset, referenced by URL.
+ */
+import SectionLabel from "../ui/SectionLabel.astro";
+import Button from "../ui/Button.astro";
+---
+
+<section id="bar" class="bar section mode-night" data-journey-section>
+  <div class="bar__grid container--xl">
+    <div class="bar__text">
+      <SectionLabel index="04" data-reveal>The Bar</SectionLabel>
+      <h2 class="bar__headline" data-reveal>
+        Crafted cocktails,<br />curated spirits,<br /><em>good nights.</em>
+      </h2>
+      <p class="bar__copy" data-reveal>
+        A full bar under low light — signature cocktails, a considered spirits
+        list, and a room that hums a little louder as the night goes on.
+      </p>
+      <div class="bar__cta" data-reveal>
+        <Button href="#after-dark" variant="secondary">Explore after dark</Button>
+      </div>
+    </div>
+
+    <figure class="bar__figure" data-reveal>
+      <img
+        class="bar__image"
+        src="/videos/hero/frames/frame-0122.webp"
+        width="1600"
+        height="900"
+        loading="lazy"
+        decoding="async"
+        alt="The signature Berlin glass — whisky over ice, etched crystal"
+      />
+      <figcaption class="bar__figcaption">The signature pour</figcaption>
+    </figure>
+  </div>
+</section>
+
+<style>
+  .bar {
+    background-color: var(--color-warm-black);
+    overflow: clip;
+  }
+
+  .bar__grid {
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: clamp(2.5rem, 5vw, 5rem);
+    align-items: center;
+  }
+
+  .bar__text { max-width: 32rem; }
+
+  .bar__headline {
+    margin-block-start: var(--space-24);
+    font-family: var(--font-display);
+    font-size: var(--fs-display-s);
+    line-height: 1.05;
+    letter-spacing: var(--tracking-display);
+    color: var(--text-strong);
+  }
+  .bar__headline em { font-style: italic; color: var(--accent); }
+
+  .bar__copy {
+    margin-block-start: var(--space-24);
+    font-size: var(--fs-body-l);
+    line-height: var(--lh-body);
+    color: var(--text-muted);
+  }
+
+  .bar__cta { margin-block-start: var(--space-40); }
+
+  .bar__figure {
+    margin: 0;
+    position: relative;
+  }
+  .bar__image {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    background: var(--color-void);
+    border: 1px solid var(--border-subtle);
+  }
+  .bar__figcaption {
+    margin-block-start: var(--space-16);
+    text-align: right;
+    font-size: var(--fs-label);
+    font-weight: 500;
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  @media (min-width: 60rem) {
+    .bar__grid { grid-template-columns: 0.9fr 1fr; }
+  }
+</style>

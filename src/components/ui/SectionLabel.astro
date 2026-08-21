@@ -6,11 +6,12 @@
 interface Props {
   index?: string;
   class?: string;
+  [key: string]: unknown;
 }
-const { index, class: className } = Astro.props;
+const { index, class: className, ...rest } = Astro.props;
 ---
 
-<p class={["section-label", className].filter(Boolean).join(" ")}>
+<p class={["section-label", className].filter(Boolean).join(" ")} {...rest}>
   {index && <span class="section-label__index">{index}</span>}
   <span class="section-label__text"><slot /></span>
 </p>

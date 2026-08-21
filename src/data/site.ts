@@ -26,6 +26,10 @@ export const nav = [
 export const contact = {
   phoneDisplay: "+91 78801 56565",
   phoneHref: "tel:+917880156565",
+  whatsappHref: "https://wa.me/917880156565",
+  // Public Google Maps search for the venue address.
+  mapsHref:
+    "https://www.google.com/maps/search/?api=1&query=High+Street+Apollo+Vijay+Nagar+Indore",
   address: {
     line1: "Level 06, High Street Apollo",
     line2: "Vijay Nagar, Indore",
@@ -33,6 +37,12 @@ export const contact = {
   },
   hours: "12:00 PM – 11:30 PM · Everyday",
 } as const;
+
+/** Public social profiles (placeholders — @swap with the real handles). */
+export const social = [
+  { label: "Instagram", href: "https://instagram.com/" },
+  { label: "Facebook", href: "https://facebook.com/" },
+] as const;
 
 /** Proof strip (Section 20 · first mockup). Kept for a later stats block. */
 export const proofPoints = [

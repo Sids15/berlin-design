@@ -149,6 +149,26 @@ export function initCinema(): void {
     });
   }
 
+  // Count-up numbers when they scroll into view.
+  gsap.utils.toArray<HTMLElement>("[data-count]").forEach((el) => {
+    const target = Number(el.dataset.count) || 0;
+    const decimals = Number(el.dataset.decimals) || 0;
+    const suffix = el.dataset.suffix ?? "";
+    const pad = Number(el.dataset.pad) || 0;
+    const obj = { v: 0 };
+    const write = () => {
+      let s = decimals ? obj.v.toFixed(decimals) : String(Math.round(obj.v));
+      if (pad) s = s.padStart(pad, "0");
+      el.textContent = s + suffix;
+    };
+    ScrollTrigger.create({
+      trigger: el,
+      start: "top 85%",
+      once: true,
+      onEnter: () => gsap.to(obj, { v: target, duration: 1.4, ease: "power1.out", onUpdate: write }),
+    });
+  });
+
   if (document.fonts?.ready) {
     document.fonts.ready.then(() => ScrollTrigger.refresh());
   }
