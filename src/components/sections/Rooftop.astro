@@ -1,9 +1,8 @@
 ---
 /**
- * The Rooftop (02) — cinematic full-bleed, golden-hour. A large kinetic
- * headline anchored low, a rotated editorial side-label, a warm horizon glow,
- * and a full-width feature bar at the base. Deliberately unlike the editorial
- * split above it.
+ * The Rooftop (02) — full-bleed golden-hour immersive. Content anchored
+ * bottom-left, a full-width feature bar at the base. Distinct from the
+ * editorial split above, kept deliberately simple and robust.
  * PLACEHOLDER IMAGE: free-license (Unsplash), @swap.
  */
 import { Picture } from "astro:assets";
@@ -33,37 +32,30 @@ const features = [
       data-parallax="0.12"
     />
     <div class="roof__scrim"></div>
-    <div class="roof__glow"></div>
   </div>
 
-  <span class="roof__side" aria-hidden="true">02 — The Rooftop</span>
-
-  <div class="roof__body">
-    <div class="roof__lead container--xl">
-      <p class="roof__eyebrow" data-reveal>Above the city</p>
-      <h2 class="roof__headline" data-split>
-        Where sunsets<br />turn into<br /><em>stories.</em>
-      </h2>
-      <div class="roof__aside">
-        <p class="roof__copy" data-reveal>
-          Open sky, low light, and the skyline for company. Six floors up, the
-          evening slows down — and the night begins.
-        </p>
-        <div data-reveal>
-          <Button href="#menu" variant="secondary">View the menu</Button>
-        </div>
-      </div>
+  <div class="roof__content container--xl">
+    <p class="roof__eyebrow" data-reveal>02 · Above the city</p>
+    <h2 class="roof__headline" data-reveal>
+      Where sunsets turn<br />into <em>stories.</em>
+    </h2>
+    <p class="roof__copy" data-reveal>
+      Open sky, low light, and the skyline for company. Six floors up, the
+      evening slows down — and the night begins.
+    </p>
+    <div data-reveal>
+      <Button href="#menu" variant="secondary">View the menu</Button>
     </div>
-
-    <ul class="roof__features container--xl" data-reveal>
-      {features.map((f) => (
-        <li class="roof__feature">
-          <span class="roof__feature-value">{f.value}</span>
-          <span class="roof__feature-label">{f.label}</span>
-        </li>
-      ))}
-    </ul>
   </div>
+
+  <ul class="roof__features container--xl" data-reveal>
+    {features.map((f) => (
+      <li class="roof__feature">
+        <span class="roof__feature-value">{f.value}</span>
+        <span class="roof__feature-label">{f.label}</span>
+      </li>
+    ))}
+  </ul>
 </section>
 
 <style>
@@ -84,56 +76,28 @@ const features = [
     height: 124%;
     margin-block-start: -12%;
     object-fit: cover;
-    filter: brightness(0.8) contrast(1.06) saturate(1.02);
+    filter: brightness(0.82) contrast(1.05) saturate(1.02);
   }
   .roof__scrim {
     position: absolute;
     inset: 0;
     background:
-      linear-gradient(to top, var(--color-void) 3%, rgba(9, 9, 8, 0.15) 42%, rgba(9, 9, 8, 0.55) 100%),
-      linear-gradient(to right, rgba(9, 9, 8, 0.6) 0%, rgba(9, 9, 8, 0) 55%);
-  }
-  /* Warm horizon glow — golden hour, kept subtle (§16). */
-  .roof__glow {
-    position: absolute;
-    inset: 0;
-    mix-blend-mode: screen;
-    background: radial-gradient(90% 55% at 68% 72%, rgba(180, 154, 99, 0.22) 0%, rgba(180, 154, 99, 0) 60%);
+      linear-gradient(to top, var(--color-void) 4%, rgba(9, 9, 8, 0.12) 45%, rgba(9, 9, 8, 0.5) 100%),
+      linear-gradient(to top, rgba(150, 96, 44, 0.22) 0%, rgba(150, 96, 44, 0) 34%),
+      linear-gradient(to right, rgba(9, 9, 8, 0.6) 0%, rgba(9, 9, 8, 0) 58%);
   }
 
-  /* Rotated editorial side-label */
-  .roof__side {
-    position: absolute;
-    z-index: 1;
-    inset-inline-end: clamp(1rem, 3vw, 2.5rem);
-    inset-block-start: 50%;
-    transform: translateY(-50%) rotate(180deg);
-    writing-mode: vertical-rl;
-    font-size: var(--fs-label);
-    font-weight: 500;
-    letter-spacing: var(--tracking-label);
-    text-transform: uppercase;
-    color: var(--text-muted);
-  }
-
-  .roof__body {
+  .roof__content {
     position: relative;
     z-index: 1;
     width: 100%;
-  }
-
-  .roof__lead {
     margin-inline: auto;
     padding-inline: var(--gutter);
     padding-block-end: clamp(2.5rem, 6vh, 4.5rem);
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: clamp(1.5rem, 4vw, 3rem);
-    align-items: end;
+    max-width: var(--container-xl);
   }
 
   .roof__eyebrow {
-    grid-column: 1 / -1;
     font-size: var(--fs-caption);
     font-weight: 500;
     letter-spacing: var(--tracking-label);
@@ -142,19 +106,19 @@ const features = [
   }
 
   .roof__headline {
+    margin-block-start: var(--space-24);
+    max-width: 18ch;
     font-family: var(--font-display);
     font-size: var(--fs-display-l);
-    line-height: 0.98;
+    line-height: 1.0;
     letter-spacing: var(--tracking-display);
     color: var(--text-strong);
   }
   .roof__headline em { font-style: italic; color: var(--accent); }
 
-  .roof__aside {
-    max-width: 26rem;
-  }
   .roof__copy {
-    margin-block-end: var(--space-32);
+    margin-block: var(--space-32);
+    max-width: 32rem;
     font-size: var(--fs-body-l);
     line-height: var(--lh-body);
     color: var(--text-muted);
@@ -162,8 +126,12 @@ const features = [
 
   /* Feature bar across the base */
   .roof__features {
+    position: relative;
+    z-index: 1;
+    width: 100%;
     margin-inline: auto;
     padding-inline: var(--gutter);
+    max-width: var(--container-xl);
     display: flex;
     flex-wrap: wrap;
     border-block-start: 1px solid var(--border-subtle);
@@ -173,12 +141,13 @@ const features = [
     display: flex;
     flex-direction: column;
     gap: 0.35rem;
-    padding-block: clamp(1.25rem, 3vh, 2rem);
-    padding-inline-end: var(--space-32);
+    padding-block: clamp(1.25rem, 3vh, 1.75rem);
+    padding-inline: 0 var(--space-32);
+  }
+  .roof__feature + .roof__feature {
     border-inline-start: 1px solid var(--border-subtle);
     padding-inline-start: var(--space-32);
   }
-  .roof__feature:first-child { border-inline-start: none; padding-inline-start: 0; }
   .roof__feature-value {
     font-family: var(--font-display);
     font-size: var(--fs-heading-s);
@@ -192,16 +161,8 @@ const features = [
     color: var(--text-muted);
   }
 
-  @media (min-width: 60rem) {
-    .roof__lead {
-      grid-template-columns: 1.3fr 1fr;
-    }
-    .roof__aside { padding-block-end: 0.5rem; }
-  }
-
   @media (max-width: 48rem) {
     .roof__headline { font-size: var(--fs-display-m); }
-    .roof__side { display: none; }
     .roof__features {
       flex-wrap: nowrap;
       overflow-x: auto;
