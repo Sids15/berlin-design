@@ -1,0 +1,142 @@
+/* =============================================================================
+   PendingQueue — live "waiting to confirm" notification on the staff console.
+   ========================================================================== */
+
+.pending {
+  border: 1px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 7%, var(--bg-elevated));
+  padding: var(--space-16) var(--space-24);
+}
+.pending--empty {
+  border-color: var(--border-subtle);
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+  font-size: var(--fs-caption);
+  text-align: center;
+}
+
+.pending__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  padding-block-end: var(--space-16);
+}
+.pending__title {
+  font-size: var(--fs-caption);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.pending__count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  padding-inline: var(--space-4);
+  font-size: var(--fs-caption);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-void);
+  background: var(--accent);
+  border-radius: 50%;
+}
+
+.pending__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: var(--space-12);
+}
+.pcard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+  padding: var(--space-16);
+  background: var(--color-void);
+  border: 1px solid var(--border-subtle);
+}
+.pcard__top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-8);
+}
+.pcard__table {
+  font-family: var(--font-display);
+  font-size: var(--fs-heading-s);
+  color: var(--text-strong);
+}
+.pcard__meta {
+  font-size: var(--fs-caption);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.pcard__items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.pcard__item {
+  display: flex;
+  gap: var(--space-8);
+  font-size: var(--fs-body);
+}
+.pcard__qty {
+  flex: 0 0 auto;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+.pcard__name {
+  min-width: 0;
+  color: var(--text);
+}
+.pcard__inote {
+  color: var(--text-muted);
+}
+.pcard__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-12);
+  padding-block-start: var(--space-12);
+  border-top: 1px solid var(--border-subtle);
+}
+.pcard__total {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-strong);
+}
+.pcard__actions {
+  display: flex;
+  gap: var(--space-8);
+}
+.pcard__confirm,
+.pcard__cancel {
+  min-height: 2.5rem;
+  padding-inline: var(--space-16);
+  font: inherit;
+  font-size: var(--fs-caption);
+  letter-spacing: var(--tracking-nav);
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.pcard__confirm {
+  background: var(--accent);
+  color: var(--color-warm-black);
+  border: none;
+}
+.pcard__confirm:hover {
+  opacity: 0.9;
+}
+.pcard__confirm:disabled,
+.pcard__cancel:disabled {
+  opacity: 0.5;
+  cursor: progress;
+}
+.pcard__cancel {
+  background: none;
+  color: var(--text-muted);
+  border: 1px solid var(--border-subtle);
+}
+.pcard__cancel:hover {
+  color: var(--text-strong);
+  border-color: var(--color-berlin-red);
+}

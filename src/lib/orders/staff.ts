@@ -31,6 +31,48 @@ export type OrderActionResult =
   | { ok: true; status: OrderStatus }
   | { ok: false; error: string };
 
+export interface PendingOrder {
+  code: string;
+  table_label: string | null;
+  waited_min: number;
+  subtotal: number;
+  items: StaffOrderLine[];
+}
+
+/**
+ * Orders waiting for a server to confirm — the pending queue the /staff console
+ * polls. Oldest first, so the longest-waiting table surfaces at the top.
+ * `waited_min` is computed server-side (page and poll share this), so the island
+ * never touches the clock during render.
+ */
+export async function getPendingOrders(
+  supabase: SupabaseClient,
+): Promise<PendingOrder[]> {
+  const { data, error } = await supabase
+    .from("orders")
+    .select("code, table_label, subtotal, created_at, order_items ( name_snapshot, price_snapshot, qty, notes )")
+    .eq("status", "pending")
+    .order("created_at", { ascending: true });
+
+  if (error || !data) return [];
+
+  const now = Date.now();
+  return data.map((o) => ({
+    code: o.code as string,
+    table_label: o.table_label as string | null,
+    subtotal: Number(o.subtotal),
+    waited_min: Math.max(0, Math.floor((now - new Date(o.created_at).getTime()) / 60000)),
+    items: (o.order_items ?? []).map(
+      (i: { name_snapshot: string; price_snapshot: number; qty: number; notes: string | null }) => ({
+        name: i.name_snapshot,
+        qty: i.qty,
+        price: Number(i.price_snapshot),
+        notes: i.notes,
+      }),
+    ),
+  }));
+}
+
 /** Full order + items for the staff console; null if the code doesn't exist. */
 export async function getStaffOrder(
   supabase: SupabaseClient,

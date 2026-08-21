@@ -6,7 +6,8 @@
  * is guaranteed here. Reads through the authenticated client (RLS applies).
  */
 import AppLayout from "../../layouts/AppLayout.astro";
-import { getStaffOrder } from "../../lib/orders/staff";
+import PendingQueue from "../../components/order/PendingQueue.tsx";
+import { getStaffOrder, getPendingOrders } from "../../lib/orders/staff";
 import { formatINR } from "../../lib/money";
 
 export const prerender = false;
@@ -15,13 +16,15 @@ const { supabase, profile } = Astro.locals;
 const params = Astro.url.searchParams;
 
 const rawCode = (params.get("code") ?? "").trim().toUpperCase();
-const ok = params.get("ok"); // "confirmed" | "cancelled"
+const ok = params.get("ok"); // "confirmed" | "cancelled" | "created"
 const err = params.get("err");
 
 const order = rawCode ? await getStaffOrder(supabase, rawCode) : null;
 const notFound = rawCode !== "" && !order;
 
 const canTake = profile!.role === "manager" || profile!.role === "server";
+// The pending queue (notification) is only meaningful to roles that confirm.
+const pending = canTake ? await getPendingOrders(supabase) : [];
 const STATUS_LABEL: Record<string, string> = {
   pending: "Waiting to be confirmed",
   confirmed: "Confirmed",
@@ -62,6 +65,8 @@ function when(iso: string): string {
         </form>
       </div>
     </header>
+
+    {canTake && <PendingQueue client:load initialOrders={pending} />}
 
     <form class="lookup" method="get" action="/staff">
       <label class="lookup__label" for="code">Order code</label>
