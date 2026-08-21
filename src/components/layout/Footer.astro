@@ -1,7 +1,9 @@
 ---
 /**
- * Footer (§20) — minimal utility panel with rounded bottom corners, revealing
- * an oversized BERLIN wordmark beneath it as the page ends.
+ * Footer (§20) — a dark panel with rounded corners that lifts to reveal an
+ * oversized BERLIN wordmark clipped at the bottom (à la stonegalaxy.co.in),
+ * over a brand block + column layout. Champagne wordmark reads on the dark
+ * theme where their maroon would not.
  */
 import { brand, nav, contact, social } from "../../data/site";
 const year = new Date().getFullYear();
@@ -9,14 +11,18 @@ const year = new Date().getFullYear();
 
 <div class="brandfoot mode-night">
   <footer class="footer">
-    <div class="footer__inner container--xl">
-      <div class="footer__brand">
-        <a class="footer__wordmark" href="#top" aria-label={`${brand.name}, ${brand.tagline}`}>
-          <span class="footer__name">{brand.name}</span>
-          <span class="footer__tagline">{brand.tagline}</span>
-        </a>
-      </div>
+    <div class="footer__top container--xl">
+      <a class="footer__wordmark" href="#top" aria-label={`${brand.name}, ${brand.tagline}`}>
+        <span class="footer__name">{brand.name}</span>
+        <span class="footer__tagline">{brand.tagline}</span>
+      </a>
+      <p class="footer__pitch">
+        A rooftop gourmet house &amp; bar, six floors above the city —
+        where global flavours meet crafted cocktails and long Berlin nights.
+      </p>
+    </div>
 
+    <div class="footer__cols container--xl">
       <nav class="footer__col" aria-label="Sections">
         <h2 class="footer__heading">Explore</h2>
         <ul>
@@ -34,12 +40,14 @@ const year = new Date().getFullYear();
           {contact.address.line3}
         </address>
         <p class="footer__hours">{contact.hours}</p>
-        <a class="footer__phone" href={contact.phoneHref}>{contact.phoneDisplay}</a>
       </div>
 
       <div class="footer__col">
-        <h2 class="footer__heading">Follow</h2>
-        <ul>
+        <h2 class="footer__heading">Contact</h2>
+        <a class="footer__phone" href={contact.phoneHref}>{contact.phoneDisplay}</a>
+        <ul class="footer__links">
+          <li><a href={contact.whatsappHref} target="_blank" rel="noopener">WhatsApp</a></li>
+          <li><a href={contact.mapsHref} target="_blank" rel="noopener">Directions</a></li>
           {social.map((s) => (
             <li><a href={s.href} target="_blank" rel="noopener">{s.label}</a></li>
           ))}
@@ -74,30 +82,47 @@ const year = new Date().getFullYear();
     z-index: 2;
     background-color: var(--color-charcoal);
     color: var(--text);
-    padding-block: clamp(4rem, 8vw, 6rem) clamp(1.5rem, 3vw, 2.5rem);
+    padding-block: clamp(4rem, 8vw, 6.5rem) clamp(1.5rem, 3vw, 2.5rem);
     border-end-start-radius: clamp(2rem, 5vw, 4.5rem);
     border-end-end-radius: clamp(2rem, 5vw, 4.5rem);
   }
 
-  .footer__inner {
+  /* Brand block */
+  .footer__top {
     margin-inline: auto;
     padding-inline: var(--gutter);
     display: grid;
     grid-template-columns: 1fr;
-    gap: clamp(2.5rem, 5vw, 4rem);
+    gap: clamp(1.5rem, 4vw, 3rem);
+    padding-block-end: clamp(2.5rem, 5vw, 4rem);
+    border-block-end: 1px solid var(--border-subtle);
   }
-
   .footer__wordmark { display: flex; flex-direction: column; line-height: 1; color: var(--text-strong); }
-  .footer__name { font-family: var(--font-display); font-size: 1.75rem; letter-spacing: 0.14em; }
+  .footer__name { font-family: var(--font-display); font-size: clamp(2rem, 4vw, 2.75rem); letter-spacing: 0.14em; }
   .footer__tagline {
     font-size: var(--fs-label);
     font-weight: 500;
     letter-spacing: var(--tracking-label);
     text-transform: uppercase;
     color: var(--text-muted);
-    margin-block-start: 0.4rem;
+    margin-block-start: 0.5rem;
+  }
+  .footer__pitch {
+    max-width: 34rem;
+    font-size: var(--fs-body-l);
+    line-height: var(--lh-body);
+    color: var(--text-muted);
   }
 
+  /* Columns */
+  .footer__cols {
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+    padding-block-start: clamp(2.5rem, 5vw, 4rem);
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: clamp(2.5rem, 5vw, 4rem);
+  }
   .footer__heading {
     font-family: var(--font-ui);
     font-size: var(--fs-label);
@@ -107,7 +132,6 @@ const year = new Date().getFullYear();
     color: var(--accent);
     margin-block-end: var(--space-24);
   }
-
   .footer__col ul { display: flex; flex-direction: column; gap: var(--space-12); }
   .footer__col a {
     font-size: var(--fs-caption);
@@ -116,24 +140,19 @@ const year = new Date().getFullYear();
     transition: color 0.3s var(--ease-out);
   }
   .footer__col a:hover { color: var(--accent); }
-
-  .footer__address {
-    font-style: normal;
-    font-size: var(--fs-caption);
-    line-height: 1.7;
-    color: var(--text-muted);
-  }
+  .footer__address { font-style: normal; font-size: var(--fs-caption); line-height: 1.7; color: var(--text-muted); }
   .footer__hours { margin-block-start: var(--space-16); font-size: var(--fs-caption); color: var(--text-muted); }
   .footer__phone {
     display: inline-block;
-    margin-block-start: var(--space-16);
     font-family: var(--font-display);
     font-size: var(--fs-heading-s);
     color: var(--text-strong);
+    margin-block-end: var(--space-16);
   }
   .footer__phone:hover { color: var(--accent); }
+  .footer__links { display: flex; flex-direction: column; gap: var(--space-12); }
 
-  /* Utility row — three parts, muted, low-contrast */
+  /* Legal row */
   .footer__base {
     margin-inline: auto;
     padding-inline: var(--gutter);
@@ -156,18 +175,15 @@ const year = new Date().getFullYear();
   }
   .footer__legal { display: flex; gap: var(--space-32); }
   .footer__legal a { transition: color 0.3s var(--ease-out); }
-  .footer__legal a:hover,
-  .footer__place { color: var(--text-muted); }
   .footer__legal a:hover { color: var(--accent); }
 
-  /* Oversized wordmark revealed beneath the rounded panel, clipped at the
-     bottom by a fixed height (robust — no fragile negative-margin overlap). */
+  /* Oversized wordmark revealed beneath the panel, clipped at the bottom. */
   .brandfoot__giant {
     position: relative;
     z-index: 1;
-    font-size: clamp(3.25rem, 22vw, 18rem);
-    height: 0.72em; /* show the top ~72% of the letters, clip the rest */
-    margin-block-start: clamp(0.5rem, 1.5vw, 1.75rem);
+    font-size: clamp(3.75rem, 25vw, 20rem);
+    height: 0.7em; /* reveal the top ~70% of the letters */
+    margin-block-start: clamp(0.75rem, 2vw, 2rem);
     overflow: hidden;
     pointer-events: none;
     user-select: none;
@@ -179,12 +195,13 @@ const year = new Date().getFullYear();
     font-weight: 400;
     font-size: inherit;
     line-height: 1;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.08em;
     white-space: nowrap;
-    color: #8a2f27; /* deep reflected maroon */
+    color: var(--accent);
   }
 
   @media (min-width: 48rem) {
-    .footer__inner { grid-template-columns: 1.4fr 1fr 1.2fr 1fr; }
+    .footer__top { grid-template-columns: 1fr 1fr; align-items: end; }
+    .footer__cols { grid-template-columns: 1.4fr 1.2fr 1.2fr; }
   }
 </style>
