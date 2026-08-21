@@ -1,149 +1,264 @@
 ---
 /**
- * Hero (Sections 20, 24) — cinematic split composition (reference).
- * Dark left column carries the type; the drink emerges from the void on the
- * right, bleeding to the edge. Establishes the type treatment, CTA language,
- * and meta styling the rest of the site inherits.
+ * Hero (Sections 18, 20, 24) — scroll-driven cinematic.
  *
- * PLACEHOLDER IMAGE: free-license (Unsplash, no attribution required),
- * marked for swap with the real art-directed photography. Astro's <Picture>
- * emits AVIF/WebP + srcset automatically (Section 26).
+ * The hero is a tall "scroll stage": a full-screen video is pinned while the
+ * visitor scrolls, and scroll position scrubs the video timeline. Type sits on
+ * the left over a scrim and fades out toward the end, where an overlay eases to
+ * full black — handing off into the next (dark) section from darkness.
+ *
+ * Fallbacks (no scrub): reduced-motion → static poster; touch / small screens
+ * → a plain muted loop (scroll-scrubbing video is unreliable on iOS). The whole
+ * interaction is a vanilla script — no React shipped.
+ *
+ * PLACEHOLDER MEDIA: hero-pour.mp4 + a free-license poster still, both marked
+ * for swap with the final art-directed footage.
  */
-import { Picture } from "astro:assets";
+import { getImage } from "astro:assets";
 import { brand, contact } from "../../data/site";
 import Button from "../ui/Button.astro";
-// @swap: replace with the final hero photograph (dark background, subject right).
-import heroImage from "../../assets/hero/hero-pour-dark.jpg";
+// @swap: replace with a still frame from the final hero footage.
+import posterSource from "../../assets/hero/hero-pour-dark.jpg";
+
+const VIDEO_SRC = "/videos/hero/hero-pour.mp4"; // @swap: final hero footage (add a .webm too)
+const poster = await getImage({ src: posterSource, width: 1600, format: "webp" });
 ---
 
-<section id="top" class="hero mode-night" aria-label="Berlin — Haus de Gourmet">
-  <div class="hero__media" aria-hidden="true">
-    <Picture
-      src={heroImage}
-      formats={["avif", "webp"]}
-      fallbackFormat="jpg"
-      alt=""
-      widths={[768, 1200, 1800, 2400]}
-      sizes="(max-width: 48rem) 100vw, 62vw"
-      loading="eager"
-      fetchpriority="high"
-      pictureAttributes={{ class: "hero__picture" }}
-      class="hero__image"
-    />
-    <div class="hero__scrim"></div>
-  </div>
+<section id="top" class="hero mode-night" aria-label="Berlin — Haus de Gourmet" data-hero>
+  <div class="hero__sticky">
+    <video
+      class="hero__video"
+      data-hero-video
+      poster={poster.src}
+      muted
+      playsinline
+      preload="auto"
+      aria-hidden="true"
+      disablepictureinpicture
+    >
+      <source src={VIDEO_SRC} type="video/mp4" />
+    </video>
+    <div class="hero__scrim" aria-hidden="true"></div>
 
-  <div class="hero__inner container--xl">
-    <div class="hero__content">
-      <p class="hero__eyebrow">{contact.address.line2}</p>
+    <div class="hero__inner container--xl">
+      <div class="hero__content" data-hero-content>
+        <p class="hero__eyebrow">{contact.address.line2}</p>
 
-      <h1 class="hero__headline">
-        <span class="hero__line">Dining.</span>
-        <span class="hero__line">Drinking.</span>
-        <span class="hero__line hero__line--accent">Nights.</span>
-      </h1>
+        <h1 class="hero__headline">
+          <span class="hero__line">Dining.</span>
+          <span class="hero__line">Drinking.</span>
+          <span class="hero__line hero__line--accent">Nights.</span>
+        </h1>
 
-      <p class="hero__sub">A rooftop gourmet house<br />above the city.</p>
+        <p class="hero__sub">A rooftop gourmet house<br />above the city.</p>
 
-      <div class="hero__actions">
-        <Button href="#visit" variant="primary" arrow={false}>Reserve a Table</Button>
-        <Button href="#experience" variant="secondary">Explore</Button>
+        <div class="hero__actions">
+          <Button href="#visit" variant="primary" arrow={false}>Reserve a Table</Button>
+          <Button href="#experience" variant="secondary">Explore</Button>
+        </div>
+
+        <dl class="hero__meta">
+          <div class="hero__meta-item">
+            <svg class="hero__meta-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.25" />
+              <path d="M12 7v5l3.5 2" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <div>
+              <dt class="visually-hidden">Hours</dt>
+              <dd class="hero__meta-value">12:00 PM – 11:30 PM</dd>
+              <dd class="hero__meta-label">Everyday</dd>
+            </div>
+          </div>
+
+          <span class="hero__meta-divider" aria-hidden="true"></span>
+
+          <div class="hero__meta-item">
+            <svg class="hero__meta-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M12 21s7-5.686 7-11a7 7 0 1 0-14 0c0 5.314 7 11 7 11Z" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round" />
+              <circle cx="12" cy="10" r="2.5" stroke="currentColor" stroke-width="1.25" />
+            </svg>
+            <div>
+              <dt class="visually-hidden">Address</dt>
+              <dd class="hero__meta-value">{contact.address.line1}</dd>
+              <dd class="hero__meta-label">{contact.address.line2}</dd>
+            </div>
+          </div>
+        </dl>
       </div>
-
-      <dl class="hero__meta">
-        <div class="hero__meta-item">
-          <svg class="hero__meta-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.25" />
-            <path d="M12 7v5l3.5 2" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
-          <div>
-            <dt class="visually-hidden">Hours</dt>
-            <dd class="hero__meta-value">12:00 PM – 11:30 PM</dd>
-            <dd class="hero__meta-label">Everyday</dd>
-          </div>
-        </div>
-
-        <span class="hero__meta-divider" aria-hidden="true"></span>
-
-        <div class="hero__meta-item">
-          <svg class="hero__meta-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M12 21s7-5.686 7-11a7 7 0 1 0-14 0c0 5.314 7 11 7 11Z" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round" />
-            <circle cx="12" cy="10" r="2.5" stroke="currentColor" stroke-width="1.25" />
-          </svg>
-          <div>
-            <dt class="visually-hidden">Address</dt>
-            <dd class="hero__meta-value">{contact.address.line1}</dd>
-            <dd class="hero__meta-label">{contact.address.line2}</dd>
-          </div>
-        </div>
-      </dl>
     </div>
-  </div>
 
-  <a class="hero__scroll" href="#experience">
-    <span class="hero__scroll-label">Scroll to begin</span>
-    <span class="hero__scroll-line" aria-hidden="true"></span>
-  </a>
+    <a class="hero__scroll" href="#experience" data-hero-content>
+      <span class="hero__scroll-label">Scroll to begin</span>
+      <span class="hero__scroll-line" aria-hidden="true"></span>
+    </a>
+
+    <div class="hero__endfade" data-hero-endfade aria-hidden="true"></div>
+  </div>
 
   <span class="visually-hidden">{brand.description}</span>
 </section>
 
+<script>
+  const stage = document.querySelector<HTMLElement>("[data-hero]");
+  const video = stage?.querySelector<HTMLVideoElement>("[data-hero-video]");
+  const fadeEls = stage
+    ? Array.from(stage.querySelectorAll<HTMLElement>("[data-hero-content]"))
+    : [];
+  const endfade = stage?.querySelector<HTMLElement>("[data-hero-endfade]");
+
+  if (stage && video) {
+    const prefersReduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const isTouch = matchMedia("(hover: none), (pointer: coarse)").matches;
+    const isNarrow = matchMedia("(max-width: 48rem)").matches;
+
+    const clamp01 = (n: number) => Math.min(Math.max(n, 0), 1);
+    const smooth = (v: number, a: number, b: number) => clamp01((v - a) / (b - a));
+
+    if (prefersReduced) {
+      // Static: hold the poster, no motion.
+      stage.classList.add("hero--flat");
+    } else if (isTouch || isNarrow) {
+      // Simple ambient loop; no scroll scrubbing.
+      stage.classList.add("hero--flat");
+      video.loop = true;
+      video.play().catch(() => {});
+    } else {
+      // Scroll-scrub the timeline.
+      video.pause();
+      let duration = 0;
+      let current = 0;
+      let running = false;
+      let frame = 0;
+
+      const readDuration = () => {
+        duration = Number.isFinite(video.duration) ? video.duration : 0;
+      };
+      if (video.readyState >= 1) readDuration();
+      video.addEventListener("loadedmetadata", readDuration, { once: true });
+
+      const progress = () => {
+        const travel = stage.offsetHeight - window.innerHeight;
+        return travel > 0
+          ? clamp01(-stage.getBoundingClientRect().top / travel)
+          : 0;
+      };
+
+      const render = () => {
+        const target = progress();
+        current += (target - current) * 0.12; // ease toward scroll position
+        if (Math.abs(target - current) < 0.0004) current = target;
+
+        if (duration) {
+          const t = current * duration;
+          if (Math.abs(video.currentTime - t) > 0.008) {
+            try {
+              video.currentTime = t;
+            } catch {
+              /* seek not ready yet */
+            }
+          }
+        }
+
+        const contentOpacity = String(1 - smooth(current, 0.68, 0.9));
+        for (const el of fadeEls) el.style.opacity = contentOpacity;
+        if (endfade) endfade.style.opacity = String(smooth(current, 0.72, 1));
+
+        if (Math.abs(target - current) > 0.0004) {
+          frame = requestAnimationFrame(render);
+        } else {
+          running = false;
+        }
+      };
+
+      const kick = () => {
+        if (!running) {
+          running = true;
+          frame = requestAnimationFrame(render);
+        }
+      };
+
+      // Only animate while the hero is on screen.
+      const io = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting) {
+            window.addEventListener("scroll", kick, { passive: true });
+            window.addEventListener("resize", kick);
+            kick();
+          } else {
+            window.removeEventListener("scroll", kick);
+            window.removeEventListener("resize", kick);
+            cancelAnimationFrame(frame);
+            running = false;
+          }
+        },
+        { threshold: 0 }
+      );
+      io.observe(stage);
+    }
+  }
+</script>
+
 <style>
+  /* --- Scroll stage ------------------------------------------------------- */
   .hero {
     position: relative;
-    min-height: 100svh;
-    display: flex;
-    align-items: center;
-    overflow: hidden;
-    isolation: isolate;
+    height: var(--hero-scroll, 300vh); /* longer = slower scrub */
     background-color: var(--color-void);
   }
 
-  /* --- Media: emerges from the void on the right (§16) -------------------- */
-  .hero__media {
+  .hero--flat {
+    height: 100svh;
+  }
+
+  .hero__sticky {
+    position: sticky;
+    inset-block-start: 0;
+    height: 100svh;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    isolation: isolate;
+  }
+
+  .hero--flat .hero__sticky {
+    position: relative;
+  }
+
+  /* --- Media -------------------------------------------------------------- */
+  .hero__video {
     position: absolute;
-    inset-block: 0;
-    inset-inline-end: 0;
-    width: 62%;
+    inset: 0;
     z-index: -2;
-  }
-
-  .hero__picture {
-    display: block;
-    width: 100%;
-    height: 100%;
-  }
-
-  .hero__image {
     width: 100%;
     height: 100%;
     object-fit: cover;
     object-position: center;
     filter: brightness(0.9) contrast(1.05) saturate(0.96);
-    animation: hero-image-in 1400ms var(--ease-out) both;
   }
 
-  /* Melt the image's left edge into the dark column; gentle top/bottom fades. */
+  /* Left column stays dark for legible type; gentle top/bottom fades. */
   .hero__scrim {
     position: absolute;
     inset: 0;
+    z-index: -1;
     background:
-      linear-gradient(to right, var(--color-void) 0%, rgba(9, 9, 8, 0.55) 22%, rgba(9, 9, 8, 0) 58%),
-      linear-gradient(to bottom, var(--color-void) 0%, rgba(9, 9, 8, 0) 18%),
-      linear-gradient(to top, var(--color-void) 0%, rgba(9, 9, 8, 0) 20%);
+      linear-gradient(to right, var(--color-void) 0%, rgba(9, 9, 8, 0.58) 26%, rgba(9, 9, 8, 0) 64%),
+      linear-gradient(to top, var(--color-void) 0%, rgba(9, 9, 8, 0) 24%),
+      linear-gradient(to bottom, rgba(9, 9, 8, 0.5) 0%, rgba(9, 9, 8, 0) 18%);
   }
 
   /* --- Content ------------------------------------------------------------ */
   .hero__inner {
     position: relative;
+    z-index: 1;
     width: 100%;
     margin-inline: auto;
     padding-inline: var(--gutter);
-    padding-block: clamp(7rem, 14vh, 10rem) clamp(3rem, 8vh, 5rem);
   }
 
   .hero__content {
     max-width: 38rem;
+    will-change: opacity;
   }
 
   .hero__eyebrow {
@@ -207,7 +322,7 @@ import heroImage from "../../assets/hero/hero-pour-dark.jpg";
     animation: hero-rise 1000ms var(--ease-out) 660ms both;
   }
 
-  /* --- Meta row (printed-stationery feel, §7) ----------------------------- */
+  /* --- Meta row ----------------------------------------------------------- */
   .hero__meta {
     display: flex;
     align-items: center;
@@ -256,7 +371,8 @@ import heroImage from "../../assets/hero/hero-pour-dark.jpg";
   /* --- Scroll cue --------------------------------------------------------- */
   .hero__scroll {
     position: absolute;
-    inset-block-end: 0;
+    z-index: 1;
+    inset-block-end: clamp(1.5rem, 4vh, 2.5rem);
     inset-inline-start: 50%;
     transform: translateX(-50%);
     display: flex;
@@ -286,11 +402,18 @@ import heroImage from "../../assets/hero/hero-pour-dark.jpg";
     color: var(--text);
   }
 
-  /* --- Mobile (§24): full-bleed image, text over a full scrim ------------- */
+  /* --- End fade to black (handoff to the next section) -------------------- */
+  .hero__endfade {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    background: var(--color-void);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* --- Mobile (§24) ------------------------------------------------------- */
   @media (max-width: 48rem) {
-    .hero__media {
-      width: 100%;
-    }
     .hero__scrim {
       background:
         linear-gradient(to top, var(--color-void) 8%, rgba(9, 9, 8, 0.3) 55%, rgba(9, 9, 8, 0.72) 100%);
@@ -312,11 +435,6 @@ import heroImage from "../../assets/hero/hero-pour-dark.jpg";
   }
 
   /* --- Motion (§18) ------------------------------------------------------- */
-  @keyframes hero-image-in {
-    from { opacity: 0; transform: scale(1.05); }
-    to { opacity: 1; transform: scale(1); }
-  }
-
   @keyframes hero-rise {
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
