@@ -46,6 +46,8 @@ const RULES = [
   { name: 'GitHub token',           re: /\bgh[pousr]_[0-9A-Za-z]{36,}\b/ },
   { name: 'Stripe secret key',      re: /\b(?:sk|rk)_(?:live|test)_[0-9A-Za-z]{16,}\b/ },
   { name: 'JSON Web Token',         re: /\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b/ },
+  { name: 'Supabase secret key',    re: /\bsb_secret_[A-Za-z0-9_-]{20,}\b/ },
+  { name: 'Postgres connection string', re: /\bpostgres(?:ql)?:\/\/[^\s:@/]+:[^\s@/]+@[^\s/]+/ },
   { name: 'Bearer token literal',   re: /\bBearer\s+[A-Za-z0-9_\-.=]{20,}/ },
   { name: 'Generic secret assignment',
     re: /\b(?:api[_-]?key|apikey|secret|client[_-]?secret|access[_-]?token|auth[_-]?token|password|passwd|pwd|private[_-]?key)\b\s*[:=]\s*['"][^'"\s]{8,}['"]/i },

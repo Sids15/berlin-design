@@ -4,6 +4,16 @@ A nocturnal editorial website for a rooftop gourmet house and bar. Built to
 Design System v1.0: dark architectural surfaces, warm ivory typography,
 restrained brass accents, and a day → after-dark journey down the page.
 
+This repo is **two things in one Astro project**: the **marketing site**
+(static, prerendered) and a **real-time QR ordering app** (server-rendered on
+serverless, Supabase Postgres + Realtime + Auth). See
+[`docs/architecture.md`](docs/architecture.md) for the full design, data model,
+roles, and build sequence.
+
+> **Setup for the app:** copy `.env.example` to `.env` and fill in your Supabase
+> project keys. `npm run dev` runs both marketing and app locally; the
+> production build targets Vercel serverless (`npm run build`).
+
 ## Stack
 
 - **Astro** (static output) — near-zero JS; ships only the interactivity that

@@ -18,6 +18,9 @@ import Menu from "../components/sections/Menu.astro";
 import Gallery from "../components/sections/Gallery.astro";
 import Reviews from "../components/sections/Reviews.astro";
 import Reservation from "../components/sections/Reservation.astro";
+
+// Marketing home is fully static (prerendered) even under `output: server`.
+export const prerender = true;
 ---
 
 <BaseLayout>

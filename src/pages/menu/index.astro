@@ -1,0 +1,48 @@
+---
+/**
+ * Customer menu — placeholder shell (Feature 1). The real menu, filters, and
+ * cart land in Feature 3. Server-rendered (not prerendered) so it can read the
+ * live menu from Supabase.
+ */
+import AppLayout from "../../layouts/AppLayout.astro";
+
+const table = Astro.url.searchParams.get("table");
+---
+
+<AppLayout title="Menu — Berlin">
+  <main class="menu-shell">
+    <p class="menu-shell__eyebrow">Berlin · Haus de Gourmet</p>
+    <h1 class="menu-shell__title">Menu</h1>
+    <p class="menu-shell__note">
+      {table ? `Table ${table}. ` : ""}The full menu, filters, and cart arrive in Feature 3.
+    </p>
+  </main>
+</AppLayout>
+
+<style>
+  .menu-shell {
+    min-height: 100svh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: var(--gutter);
+    max-width: var(--container-lg);
+    margin-inline: auto;
+  }
+  .menu-shell__eyebrow {
+    font-size: var(--fs-caption);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .menu-shell__title {
+    margin-block-start: var(--space-16);
+    font-family: var(--font-display);
+    font-size: var(--fs-display-l);
+    color: var(--text-strong);
+  }
+  .menu-shell__note {
+    margin-block-start: var(--space-24);
+    color: var(--text-muted);
+  }
+</style>

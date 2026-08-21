@@ -24,3 +24,6 @@ Thumbs.db
 
 # misc
 .cache/
+
+# vercel build output
+.vercel/

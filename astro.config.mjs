@@ -1,17 +1,22 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import react from '@astrojs/react';
+import vercel from '@astrojs/vercel';
 
 // https://astro.build/config
 export default defineConfig({
+  // Server output so the ordering app renders per request as serverless
+  // functions. Marketing pages opt back into static with `export const
+  // prerender = true` (see src/pages/index.astro).
+  output: 'server',
+  adapter: vercel(),
+
   // React is loaded only as islands, on the handful of components that
-  // genuinely need client interactivity (day→night scroll, mobile menu,
-  // menu carousel). Everything else ships as static HTML with zero JS.
+  // genuinely need client interactivity. Everything else ships as static HTML.
   integrations: [react()],
 
   image: {
-    // Astro emits AVIF + WebP with responsive srcset and lazy-loading —
-    // Section 26 (Performance Rules) satisfied by the build pipeline.
+    // AVIF + WebP with responsive srcset and lazy-loading (Section 26).
     responsiveStyles: true,
   },
 });
