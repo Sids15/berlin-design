@@ -65,30 +65,30 @@ const year = new Date().getFullYear();
     </div>
   </footer>
 
-  <div class="brandfoot__giant" aria-hidden="true">
-    <svg viewBox="0 0 1000 128" preserveAspectRatio="xMidYMid meet" focusable="false">
-      <text
-        x="500"
-        y="150"
-        text-anchor="middle"
-        font-size="196"
-        textLength="962"
-        lengthAdjust="spacingAndGlyphs">{brand.name}</text>
-    </svg>
+  <div class="brandfoot__reveal">
+    <div class="brandfoot__giant" data-footer-reveal aria-hidden="true">
+      <svg viewBox="0 0 1000 150" preserveAspectRatio="xMidYMid meet" focusable="false">
+        <text
+          x="500"
+          y="128"
+          text-anchor="middle"
+          font-size="176"
+          textLength="962"
+          lengthAdjust="spacingAndGlyphs">{brand.name}</text>
+      </svg>
+    </div>
   </div>
 </div>
 
 <style>
   .brandfoot {
     position: relative;
-    /* Warm light "reveal" base — the dark panel lifts to show it + the wordmark. */
-    background-color: #d9d0bf;
-    overflow: hidden;
+    background-color: var(--color-void);
   }
 
   .footer {
     position: relative;
-    z-index: 2;
+    z-index: 1;
     background-color: var(--color-charcoal);
     color: var(--text);
     padding-block: clamp(4rem, 8vw, 6.5rem) clamp(1.5rem, 3vw, 2.5rem);
@@ -186,16 +186,28 @@ const year = new Date().getFullYear();
   .footer__legal a { transition: color 0.3s var(--ease-out); }
   .footer__legal a:hover { color: var(--accent); }
 
-  /* Oversized wordmark (SVG, so it always fits the width and clips cleanly at
-     the bottom via the viewBox). Deep maroon on the light reveal base. */
-  .brandfoot__giant {
+  /* Light reveal base beneath the panel. Tucked under the rounded footer so
+     the wordmark reads as sitting behind it; the panel scrolls up and the
+     wordmark is revealed bottom-to-top (via [data-footer-reveal] in JS). */
+  .brandfoot__reveal {
     position: relative;
-    z-index: 1;
-    margin-block-start: clamp(0.25rem, 1vw, 1rem);
+    z-index: 0;
+    margin-block-start: clamp(-2.75rem, -3.5vw, -1.5rem);
+    background-color: #d9d0bf;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    padding-block: clamp(1.75rem, 4.5vh, 3.25rem);
+    padding-inline: var(--gutter);
+  }
+  .brandfoot__giant {
+    width: 100%;
     line-height: 0;
     color: var(--color-berlin-red);
     pointer-events: none;
     user-select: none;
+    /* Full wordmark visible; JS reveals it bottom-to-top on scroll. */
+    clip-path: inset(0 0 0 0);
   }
   .brandfoot__giant svg {
     display: block;
