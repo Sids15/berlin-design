@@ -1,66 +1,82 @@
 ---
 /**
- * Footer (§20) — minimal utility. Wordmark, quick links, hours, address, social.
+ * Footer (§20) — minimal utility panel with rounded bottom corners, revealing
+ * an oversized BERLIN wordmark beneath it as the page ends.
  */
 import { brand, nav, contact, social } from "../../data/site";
 const year = new Date().getFullYear();
 ---
 
-<footer class="footer mode-night">
-  <div class="footer__inner container--xl">
-    <div class="footer__brand">
-      <a class="footer__wordmark" href="#top" aria-label={`${brand.name}, ${brand.tagline}`}>
-        <span class="footer__name">{brand.name}</span>
-        <span class="footer__tagline">{brand.tagline}</span>
-      </a>
+<div class="brandfoot mode-night">
+  <footer class="footer">
+    <div class="footer__inner container--xl">
+      <div class="footer__brand">
+        <a class="footer__wordmark" href="#top" aria-label={`${brand.name}, ${brand.tagline}`}>
+          <span class="footer__name">{brand.name}</span>
+          <span class="footer__tagline">{brand.tagline}</span>
+        </a>
+      </div>
+
+      <nav class="footer__col" aria-label="Sections">
+        <h2 class="footer__heading">Explore</h2>
+        <ul>
+          {nav.map((item) => (
+            <li><a href={item.href}>{item.label}</a></li>
+          ))}
+        </ul>
+      </nav>
+
+      <div class="footer__col">
+        <h2 class="footer__heading">Visit</h2>
+        <address class="footer__address">
+          {contact.address.line1}<br />
+          {contact.address.line2}<br />
+          {contact.address.line3}
+        </address>
+        <p class="footer__hours">{contact.hours}</p>
+        <a class="footer__phone" href={contact.phoneHref}>{contact.phoneDisplay}</a>
+      </div>
+
+      <div class="footer__col">
+        <h2 class="footer__heading">Follow</h2>
+        <ul>
+          {social.map((s) => (
+            <li><a href={s.href} target="_blank" rel="noopener">{s.label}</a></li>
+          ))}
+        </ul>
+      </div>
     </div>
 
-    <nav class="footer__col" aria-label="Sections">
-      <h2 class="footer__heading">Explore</h2>
-      <ul>
-        {nav.map((item) => (
-          <li><a href={item.href}>{item.label}</a></li>
-        ))}
-      </ul>
-    </nav>
-
-    <div class="footer__col">
-      <h2 class="footer__heading">Visit</h2>
-      <address class="footer__address">
-        {contact.address.line1}<br />
-        {contact.address.line2}<br />
-        {contact.address.line3}
-      </address>
-      <p class="footer__hours">{contact.hours}</p>
-      <a class="footer__phone" href={contact.phoneHref}>{contact.phoneDisplay}</a>
+    <div class="footer__base container--xl">
+      <p class="footer__copy">© {year} {brand.name} {brand.tagline}. All rights reserved.</p>
+      <p class="footer__legal">
+        <a href="#top">Privacy Policy</a>
+        <a href="#top">Terms of Use</a>
+      </p>
+      <p class="footer__place">Rooftop Gourmet House · Indore</p>
     </div>
+  </footer>
 
-    <div class="footer__col">
-      <h2 class="footer__heading">Follow</h2>
-      <ul>
-        {social.map((s) => (
-          <li><a href={s.href} target="_blank" rel="noopener">{s.label}</a></li>
-        ))}
-      </ul>
-    </div>
+  <div class="brandfoot__giant" aria-hidden="true">
+    <span>{brand.name}</span>
   </div>
-
-  <div class="footer__base container--xl">
-    <p class="footer__copy">© {year} {brand.name} {brand.tagline}. All rights reserved.</p>
-    <p class="footer__legal">
-      <a href="#top">Privacy Policy</a>
-      <span aria-hidden="true">·</span>
-      <a href="#top">Terms &amp; Conditions</a>
-    </p>
-  </div>
-</footer>
+</div>
 
 <style>
+  .brandfoot {
+    position: relative;
+    background-color: var(--color-void);
+    overflow: hidden;
+  }
+
   .footer {
+    position: relative;
+    z-index: 2;
     background-color: var(--color-charcoal);
     color: var(--text);
-    padding-block: clamp(4rem, 8vw, 6rem) var(--space-32);
-    border-block-start: 1px solid var(--border-subtle);
+    padding-block: clamp(4rem, 8vw, 6rem) clamp(1.5rem, 3vw, 2.5rem);
+    border-end-start-radius: clamp(2rem, 5vw, 4.5rem);
+    border-end-end-radius: clamp(2rem, 5vw, 4.5rem);
   }
 
   .footer__inner {
@@ -107,11 +123,7 @@ const year = new Date().getFullYear();
     line-height: 1.7;
     color: var(--text-muted);
   }
-  .footer__hours {
-    margin-block-start: var(--space-16);
-    font-size: var(--fs-caption);
-    color: var(--text-muted);
-  }
+  .footer__hours { margin-block-start: var(--space-16); font-size: var(--fs-caption); color: var(--text-muted); }
   .footer__phone {
     display: inline-block;
     margin-block-start: var(--space-16);
@@ -121,6 +133,7 @@ const year = new Date().getFullYear();
   }
   .footer__phone:hover { color: var(--accent); }
 
+  /* Utility row — three parts, muted, low-contrast */
   .footer__base {
     margin-inline: auto;
     padding-inline: var(--gutter);
@@ -130,17 +143,45 @@ const year = new Date().getFullYear();
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;
-    gap: var(--space-16);
+    align-items: center;
+    gap: var(--space-16) var(--space-40);
   }
   .footer__copy,
-  .footer__legal {
+  .footer__legal,
+  .footer__place {
     font-size: var(--fs-label);
     letter-spacing: var(--tracking-meta);
     text-transform: uppercase;
     color: var(--text-muted);
   }
-  .footer__legal { display: flex; gap: var(--space-12); }
+  .footer__legal { display: flex; gap: var(--space-32); }
+  .footer__legal a { transition: color 0.3s var(--ease-out); }
+  .footer__legal a:hover,
+  .footer__place { color: var(--text-muted); }
   .footer__legal a:hover { color: var(--accent); }
+
+  /* Oversized wordmark revealed beneath the rounded panel */
+  .brandfoot__giant {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: center;
+    margin-block-start: clamp(-5.5rem, -7vw, -3rem);
+    overflow: hidden;
+    pointer-events: none;
+    user-select: none;
+  }
+  .brandfoot__giant span {
+    display: block;
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: clamp(4.5rem, 25vw, 21rem);
+    line-height: 1;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    color: #8a2f27; /* deep reflected maroon */
+    transform: translateY(14%); /* let the letters clip at the very bottom */
+  }
 
   @media (min-width: 48rem) {
     .footer__inner { grid-template-columns: 1.4fr 1fr 1.2fr 1fr; }
