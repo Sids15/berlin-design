@@ -1,11 +1,10 @@
 /**
- * POST /api/staff/kitchen/<code> — advance one ticket a single step along the
- * kitchen path (confirmed → preparing → ready → served). Any signed-in staff
- * may advance. Returns JSON for the board island (which calls it via fetch).
+ * POST /api/staff/kitchen/<code> — mark a ticket complete (served). Any
+ * signed-in staff may complete. Returns JSON for the board island (fetch).
  */
 import type { APIRoute } from "astro";
 import { requireStaff } from "../../../../lib/auth/session";
-import { advanceOrder } from "../../../../lib/orders/kitchen";
+import { completeOrder } from "../../../../lib/orders/kitchen";
 
 export const prerender = false;
 
@@ -14,7 +13,7 @@ export const POST: APIRoute = async (context) => {
   if (gate instanceof Response) return gate;
 
   const code = (context.params.code ?? "").toUpperCase();
-  const result = await advanceOrder(context.locals.supabase, code);
+  const result = await completeOrder(context.locals.supabase, code);
 
   return new Response(JSON.stringify(result), {
     status: result.ok ? 200 : 422,

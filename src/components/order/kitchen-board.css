@@ -1,5 +1,5 @@
 /* =============================================================================
-   KitchenBoard — live order queue. Three lanes, tap to advance. Night mode.
+   KitchenBoard — live order queue. One list, tap Complete. Night mode.
    ========================================================================== */
 
 .board__empty {
@@ -8,43 +8,11 @@
   color: var(--text-muted);
 }
 
-.board__lanes {
+.board__grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
   gap: var(--space-16);
   align-items: start;
-}
-
-.lane {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-12);
-  min-width: 0;
-}
-.lane__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-block-end: var(--space-8);
-  border-bottom: 1px solid var(--border-subtle);
-}
-.lane__title {
-  font-size: var(--fs-caption);
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
-  color: var(--accent);
-}
-.lane__count {
-  min-width: 1.5rem;
-  text-align: center;
-  font-size: var(--fs-caption);
-  font-variant-numeric: tabular-nums;
-  color: var(--text-muted);
-}
-.lane__cards {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-12);
 }
 
 /* --- Ticket --------------------------------------------------------------- */
@@ -55,9 +23,6 @@
   padding: var(--space-16);
   background: var(--bg-elevated);
   border: 1px solid var(--border-subtle);
-}
-.lane--ready .ticket {
-  border-color: color-mix(in srgb, #4c8b4a 60%, var(--border-subtle));
 }
 .ticket__top {
   display: flex;
@@ -131,10 +96,9 @@
   cursor: progress;
 }
 
-/* --- Phones: stack the lanes --------------------------------------------- */
-@media (max-width: 48rem) {
-  .board__lanes {
+/* --- Phones: single column ----------------------------------------------- */
+@media (max-width: 30rem) {
+  .board__grid {
     grid-template-columns: 1fr;
-    gap: var(--space-32);
   }
 }

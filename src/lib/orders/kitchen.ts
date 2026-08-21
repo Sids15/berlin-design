@@ -1,8 +1,8 @@
 /**
- * Kitchen board queries. All staff can see and advance orders, so these run
- * through the authenticated client (RLS: staff-only). The board shows the
- * active queue — confirmed → preparing → ready — and advances a ticket one
- * step at a time along ORDER_FLOW's forward path.
+ * Kitchen board queries. All staff can see and complete orders, so these run
+ * through the authenticated client (RLS: staff-only). The board shows active
+ * orders (confirmed ones a server has taken) and the kitchen marks each one
+ * complete in a single step — no intermediate preparing/ready stages.
  *
  * `waited_min` is computed server-side and handed to the island as data, so the
  * island never touches the clock during render (which would desync SSR vs
@@ -11,13 +11,6 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { OrderStatus } from "../types";
-
-/** The forward step the kitchen takes from each active status. */
-const KITCHEN_ADVANCE: Partial<Record<OrderStatus, OrderStatus>> = {
-  confirmed: "preparing",
-  preparing: "ready",
-  ready: "served",
-};
 
 /** Statuses that belong on the board (a served/cancelled ticket drops off). */
 export const ACTIVE_STATUSES: OrderStatus[] = ["confirmed", "preparing", "ready"];
@@ -37,7 +30,7 @@ export interface KitchenOrder {
   items: KitchenLine[];
 }
 
-export type AdvanceResult =
+export type CompleteResult =
   | { ok: true; status: OrderStatus }
   | { ok: false; error: string };
 
@@ -76,11 +69,11 @@ export async function getActiveKitchenOrders(
   });
 }
 
-/** Advance one ticket a single step (confirmed→preparing→ready→served). */
-export async function advanceOrder(
+/** Mark a ticket complete (any active status → served). Idempotent. */
+export async function completeOrder(
   supabase: SupabaseClient,
   code: string,
-): Promise<AdvanceResult> {
+): Promise<CompleteResult> {
   const { data: order, error } = await supabase
     .from("orders")
     .select("id, status")
@@ -89,20 +82,21 @@ export async function advanceOrder(
 
   if (error) return { ok: false, error: "Couldn't reach that order — please retry." };
   if (!order) return { ok: false, error: "No order with that code." };
+  if (order.status === "served") return { ok: true, status: "served" };
+  if (!ACTIVE_STATUSES.includes(order.status as OrderStatus)) {
+    return { ok: false, error: `Can't complete an order that's ${order.status}.` };
+  }
 
-  const next = KITCHEN_ADVANCE[order.status as OrderStatus];
-  if (!next) return { ok: false, error: `Can't advance an order that's ${order.status}.` };
-
-  // Guard the current status in the WHERE so two stations can't double-advance.
+  // Guard on an active status in the WHERE so two stations can't double-apply.
   const { data: updated, error: upErr } = await supabase
     .from("orders")
-    .update({ status: next })
+    .update({ status: "served" })
     .eq("id", order.id)
-    .eq("status", order.status)
+    .in("status", ACTIVE_STATUSES)
     .select("status")
     .maybeSingle();
 
   if (upErr) return { ok: false, error: "Couldn't update — please retry." };
-  if (!updated) return { ok: false, error: "That ticket just moved — refreshing." };
-  return { ok: true, status: next };
+  if (!updated) return { ok: true, status: "served" };
+  return { ok: true, status: "served" };
 }

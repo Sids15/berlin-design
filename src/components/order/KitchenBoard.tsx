@@ -1,9 +1,9 @@
 /**
- * KitchenBoard — the live kitchen queue island. Three lanes (New → Preparing →
- * Ready); each ticket advances one step on tap. Updates come from polling
- * /api/staff/kitchen/active every few seconds (same shape the server rendered),
- * so the board never computes time itself — `waited_min` arrives as data. That
- * keeps SSR and hydration identical.
+ * KitchenBoard — the live kitchen queue island. One list of active orders; the
+ * kitchen taps Complete to finish a ticket, which drops off the board. Updates
+ * come from polling /api/staff/kitchen/active every few seconds (same shape the
+ * server rendered), so the board never computes time itself — `waited_min`
+ * arrives as data. That keeps SSR and hydration identical.
  */
 import { useEffect, useState } from "react";
 import "./kitchen-board.css";
@@ -16,19 +16,13 @@ interface KitchenLine {
 interface KitchenOrderData {
   code: string;
   table_label: string | null;
-  status: "confirmed" | "preparing" | "ready";
+  status: string;
   waited_min: number;
   notes: string | null;
   items: KitchenLine[];
 }
 
 const POLL_MS = 4000;
-
-const LANES = [
-  { status: "confirmed", title: "New", action: "Start preparing" },
-  { status: "preparing", title: "Preparing", action: "Mark ready" },
-  { status: "ready", title: "Ready", action: "Mark served" },
-] as const;
 
 export default function KitchenBoard({
   initialOrders,
@@ -58,22 +52,14 @@ export default function KitchenBoard({
     };
   }, []);
 
-  async function advance(code: string) {
+  async function complete(code: string) {
     setBusy((s) => new Set(s).add(code));
     try {
       const res = await fetch(`/api/staff/kitchen/${code}`, { method: "POST" });
       if (res.ok) {
-        const data = (await res.json()) as { ok: boolean; status?: string };
-        if (data.ok && data.status) {
-          // Optimistically reflect the move; the next poll reconciles.
-          setOrders((prev) =>
-            prev.flatMap((o) => {
-              if (o.code !== code) return [o];
-              if (data.status === "served") return [];
-              return [{ ...o, status: data.status as KitchenOrderData["status"] }];
-            }),
-          );
-        }
+        const data = (await res.json()) as { ok: boolean };
+        // Optimistically drop it; the next poll reconciles.
+        if (data.ok) setOrders((prev) => prev.filter((o) => o.code !== code));
       }
     } catch {
       /* ignore — the poll will reconcile */
@@ -86,58 +72,46 @@ export default function KitchenBoard({
     }
   }
 
+  if (orders.length === 0) {
+    return (
+      <p className="board__empty">
+        No active orders. Confirmed orders land here as servers take them.
+      </p>
+    );
+  }
+
   return (
-    <div className="board">
-      {orders.length === 0 && (
-        <p className="board__empty">
-          No active orders. Confirmed orders land here as servers take them.
-        </p>
-      )}
-      <div className="board__lanes">
-        {LANES.map((lane) => {
-          const cards = orders.filter((o) => o.status === lane.status);
-          return (
-            <section key={lane.status} className={`lane lane--${lane.status}`}>
-              <header className="lane__head">
-                <h2 className="lane__title">{lane.title}</h2>
-                <span className="lane__count">{cards.length}</span>
-              </header>
-              <div className="lane__cards">
-                {cards.map((o) => (
-                  <article key={o.code} className="ticket">
-                    <div className="ticket__top">
-                      <span className="ticket__code">{o.code}</span>
-                      <span className="ticket__meta">
-                        {o.table_label ? `Table ${o.table_label}` : "No table"} · {o.waited_min}m
-                      </span>
-                    </div>
-                    <ul className="ticket__items">
-                      {o.items.map((it, idx) => (
-                        <li key={idx} className="ticket__item">
-                          <span className="ticket__qty">{it.qty}×</span>
-                          <span className="ticket__name">
-                            {it.name}
-                            {it.notes && <span className="ticket__inote">{it.notes}</span>}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                    {o.notes && <p className="ticket__note">Note: {o.notes}</p>}
-                    <button
-                      type="button"
-                      className="ticket__advance"
-                      onClick={() => advance(o.code)}
-                      disabled={busy.has(o.code)}
-                    >
-                      {busy.has(o.code) ? "…" : lane.action}
-                    </button>
-                  </article>
-                ))}
-              </div>
-            </section>
-          );
-        })}
-      </div>
+    <div className="board__grid">
+      {orders.map((o) => (
+        <article key={o.code} className="ticket">
+          <div className="ticket__top">
+            <span className="ticket__code">{o.code}</span>
+            <span className="ticket__meta">
+              {o.table_label ? `Table ${o.table_label}` : "No table"} · {o.waited_min}m
+            </span>
+          </div>
+          <ul className="ticket__items">
+            {o.items.map((it, idx) => (
+              <li key={idx} className="ticket__item">
+                <span className="ticket__qty">{it.qty}×</span>
+                <span className="ticket__name">
+                  {it.name}
+                  {it.notes && <span className="ticket__inote">{it.notes}</span>}
+                </span>
+              </li>
+            ))}
+          </ul>
+          {o.notes && <p className="ticket__note">Note: {o.notes}</p>}
+          <button
+            type="button"
+            className="ticket__advance"
+            onClick={() => complete(o.code)}
+            disabled={busy.has(o.code)}
+          >
+            {busy.has(o.code) ? "…" : "Complete"}
+          </button>
+        </article>
+      ))}
     </div>
   );
 }
