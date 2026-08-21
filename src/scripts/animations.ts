@@ -81,16 +81,16 @@ export function initAnimations(): void {
     );
   });
 
-  // --- Clip-path image wipes ------------------------------------------------
+  // --- Image reveal: horizontal curtain wipe (left → right) -----------------
   gsap.utils.toArray<HTMLElement>("[data-clip]").forEach((el) => {
     gsap.fromTo(
       el,
-      { clipPath: "inset(0% 0% 100% 0%)" },
+      { clipPath: "inset(0% 100% 0% 0%)" },
       {
         clipPath: "inset(0% 0% 0% 0%)",
-        duration: 1.2,
+        duration: 1.25,
         ease: "power3.inOut",
-        scrollTrigger: { trigger: el, start: "top 84%", once: true },
+        scrollTrigger: { trigger: el, start: "top 82%", once: true },
       }
     );
   });

@@ -160,27 +160,28 @@ const year = new Date().getFullYear();
   .footer__place { color: var(--text-muted); }
   .footer__legal a:hover { color: var(--accent); }
 
-  /* Oversized wordmark revealed beneath the rounded panel */
+  /* Oversized wordmark revealed beneath the rounded panel, clipped at the
+     bottom by a fixed height (robust — no fragile negative-margin overlap). */
   .brandfoot__giant {
     position: relative;
     z-index: 1;
-    display: flex;
-    justify-content: center;
-    margin-block-start: clamp(-5.5rem, -7vw, -3rem);
+    font-size: clamp(3.25rem, 22vw, 18rem);
+    height: 0.72em; /* show the top ~72% of the letters, clip the rest */
+    margin-block-start: clamp(0.5rem, 1.5vw, 1.75rem);
     overflow: hidden;
     pointer-events: none;
     user-select: none;
   }
   .brandfoot__giant span {
     display: block;
+    text-align: center;
     font-family: var(--font-display);
     font-weight: 400;
-    font-size: clamp(4.5rem, 25vw, 21rem);
+    font-size: inherit;
     line-height: 1;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.06em;
     white-space: nowrap;
     color: #8a2f27; /* deep reflected maroon */
-    transform: translateY(14%); /* let the letters clip at the very bottom */
   }
 
   @media (min-width: 48rem) {
