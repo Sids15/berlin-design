@@ -1,0 +1,158 @@
+---
+/**
+ * Staff login (Feature 4). Public within the protected /staff area. Posts
+ * credentials to /api/auth/login, which signs in and sets the session cookies.
+ * Already-signed-in staff are sent straight through to their destination.
+ */
+import AppLayout from "../../layouts/AppLayout.astro";
+
+export const prerender = false;
+
+const params = Astro.url.searchParams;
+const next = params.get("next") ?? "/staff";
+const error = params.get("error");
+
+// If a valid session already exists, skip the form.
+const {
+  data: { user },
+} = await Astro.locals.supabase.auth.getUser();
+if (user) {
+  const safe = next.startsWith("/") && !next.startsWith("//") ? next : "/staff";
+  return Astro.redirect(safe, 302);
+}
+
+const ERROR_COPY: Record<string, string> = {
+  invalid: "That email and password don't match. Please try again.",
+  missing: "Enter your email and password.",
+};
+const errorText = error ? (ERROR_COPY[error] ?? "Couldn't sign you in.") : null;
+---
+
+<AppLayout title="Staff sign-in — Berlin">
+  <main class="login">
+    <div class="login__card">
+      <header class="login__head">
+        <p class="login__eyebrow">Berlin · Haus de Gourmet</p>
+        <h1 class="login__title">Staff sign-in</h1>
+        <p class="login__note">For servers, kitchen, and managers.</p>
+      </header>
+
+      {errorText && <p class="login__error" role="alert">{errorText}</p>}
+
+      <form class="login__form" method="post" action="/api/auth/login">
+        <input type="hidden" name="next" value={next} />
+        <label class="field">
+          <span class="field__label">Email</span>
+          <input
+            class="field__input"
+            type="email"
+            name="email"
+            autocomplete="username"
+            required
+            autofocus
+          />
+        </label>
+        <label class="field">
+          <span class="field__label">Password</span>
+          <input
+            class="field__input"
+            type="password"
+            name="password"
+            autocomplete="current-password"
+            required
+          />
+        </label>
+        <button class="login__submit" type="submit">Sign in</button>
+      </form>
+    </div>
+  </main>
+</AppLayout>
+
+<style>
+  .login {
+    min-height: 100svh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--gutter);
+  }
+  .login__card {
+    width: 100%;
+    max-width: 24rem;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-24);
+    padding: var(--space-32);
+    border: 1px solid var(--border-subtle);
+    background: var(--bg-elevated);
+  }
+  .login__head {
+    text-align: center;
+  }
+  .login__eyebrow {
+    font-size: var(--fs-caption);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .login__title {
+    margin-block-start: var(--space-8);
+    font-family: var(--font-display);
+    font-size: var(--fs-display-s);
+    color: var(--text-strong);
+  }
+  .login__note {
+    margin-block-start: var(--space-8);
+    font-size: var(--fs-caption);
+    color: var(--text-muted);
+  }
+  .login__error {
+    padding: var(--space-12) var(--space-16);
+    border: 1px solid var(--color-berlin-red);
+    background: color-mix(in srgb, var(--color-berlin-red) 14%, transparent);
+    color: var(--text-strong);
+    font-size: var(--fs-caption);
+  }
+  .login__form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-16);
+  }
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+  }
+  .field__label {
+    font-size: var(--fs-caption);
+    letter-spacing: var(--tracking-meta);
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .field__input {
+    padding: var(--space-12) var(--space-16);
+    background: var(--color-void);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-strong);
+    font: inherit;
+  }
+  .field__input:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .login__submit {
+    min-height: var(--btn-height);
+    margin-block-start: var(--space-8);
+    background: var(--accent);
+    color: var(--color-warm-black);
+    border: none;
+    font: inherit;
+    letter-spacing: var(--tracking-nav);
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: opacity 150ms var(--ease-smooth);
+  }
+  .login__submit:hover {
+    opacity: 0.9;
+  }
+</style>

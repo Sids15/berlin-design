@@ -1,0 +1,34 @@
+/**
+ * POST /api/staff/orders/<code> — a server confirms or cancels an order from
+ * the /staff console. Form field `action` = "confirm" | "cancel". Only roles
+ * that take orders (manager, server) may act. Redirects back to the console
+ * with a flash flag; the confirm is what flips the customer's page to "placed".
+ */
+import type { APIRoute } from "astro";
+import { requireStaff } from "../../../../lib/auth/session";
+import { confirmOrder, cancelOrder } from "../../../../lib/orders/staff";
+
+export const prerender = false;
+
+export const POST: APIRoute = async (context) => {
+  const gate = requireStaff(context.locals, ["manager", "server"]);
+  if (gate instanceof Response) return gate;
+
+  const code = (context.params.code ?? "").toUpperCase();
+  const form = await context.request.formData();
+  const action = String(form.get("action") ?? "");
+
+  const supabase = context.locals.supabase;
+  const result =
+    action === "confirm"
+      ? await confirmOrder(supabase, code, gate.user.id)
+      : action === "cancel"
+        ? await cancelOrder(supabase, code)
+        : ({ ok: false, error: "Unknown action." } as const);
+
+  const q = new URLSearchParams({ code });
+  if (result.ok) q.set("ok", result.status);
+  else q.set("err", result.error);
+
+  return context.redirect(`/staff?${q.toString()}`, 303);
+};

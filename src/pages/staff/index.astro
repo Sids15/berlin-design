@@ -1,0 +1,433 @@
+---
+/**
+ * Staff console (Feature 4). A server looks up an order by its code, reviews it,
+ * and confirms it — the confirm is what flips the customer's tracking page from
+ * "Waiting" to "Order placed". Behind the auth middleware, so `locals.profile`
+ * is guaranteed here. Reads through the authenticated client (RLS applies).
+ */
+import AppLayout from "../../layouts/AppLayout.astro";
+import { getStaffOrder } from "../../lib/orders/staff";
+import { formatINR } from "../../lib/money";
+
+export const prerender = false;
+
+const { supabase, profile } = Astro.locals;
+const params = Astro.url.searchParams;
+
+const rawCode = (params.get("code") ?? "").trim().toUpperCase();
+const ok = params.get("ok"); // "confirmed" | "cancelled"
+const err = params.get("err");
+
+const order = rawCode ? await getStaffOrder(supabase, rawCode) : null;
+const notFound = rawCode !== "" && !order;
+
+const canTake = profile!.role === "manager" || profile!.role === "server";
+const STATUS_LABEL: Record<string, string> = {
+  pending: "Waiting to be confirmed",
+  confirmed: "Confirmed",
+  preparing: "Preparing",
+  ready: "Ready",
+  served: "Served",
+  cancelled: "Cancelled",
+};
+
+function when(iso: string): string {
+  try {
+    return new Date(iso).toLocaleString("en-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      day: "numeric",
+      month: "short",
+    });
+  } catch {
+    return "";
+  }
+}
+---
+
+<AppLayout title="Staff console — Berlin">
+  <main class="staff">
+    <header class="staff__bar">
+      <div>
+        <p class="staff__eyebrow">Berlin · Staff</p>
+        <h1 class="staff__title">Order desk</h1>
+      </div>
+      <div class="staff__who">
+        <span class="staff__name">{profile!.name || "Staff"}</span>
+        <span class="staff__role">{profile!.role}</span>
+        <form method="post" action="/api/auth/logout">
+          <button class="staff__signout" type="submit">Sign out</button>
+        </form>
+      </div>
+    </header>
+
+    <form class="lookup" method="get" action="/staff">
+      <label class="lookup__label" for="code">Order code</label>
+      <div class="lookup__row">
+        <input
+          class="lookup__input"
+          id="code"
+          name="code"
+          value={rawCode}
+          placeholder="e.g. 3FTBUB"
+          autocomplete="off"
+          autocapitalize="characters"
+          spellcheck="false"
+          autofocus
+        />
+        <button class="lookup__go" type="submit">Look up</button>
+      </div>
+      <p class="lookup__hint">Read the code from the customer's screen or QR.</p>
+    </form>
+
+    {ok && (
+      <p class="flash flash--ok" role="status">
+        {ok === "confirmed" ? `Order ${rawCode} confirmed — the table has been told.` : `Order ${rawCode} cancelled.`}
+      </p>
+    )}
+    {err && <p class="flash flash--err" role="alert">{err}</p>}
+
+    {notFound && (
+      <p class="empty">No order found for <strong>{rawCode}</strong>. Check the code and try again.</p>
+    )}
+
+    {!rawCode && !ok && (
+      <p class="empty">Enter an order code above to review and confirm it.</p>
+    )}
+
+    {order && (
+      <section class="order" aria-label={`Order ${order.code}`}>
+        <header class="order__head">
+          <div>
+            <p class="order__code">{order.code}</p>
+            <p class="order__meta">
+              {order.table_label ? `Table ${order.table_label}` : "No table"} ·
+              {order.source === "customer" ? " Customer order" : " Server order"} ·
+              {" "}{when(order.created_at)}
+            </p>
+          </div>
+          <span class={`badge badge--${order.status}`}>{STATUS_LABEL[order.status]}</span>
+        </header>
+
+        <ul class="order__lines">
+          {order.items.map((line) => (
+            <li class="order__line">
+              <span class="order__qty">{line.qty}×</span>
+              <span class="order__name">
+                {line.name}
+                {line.notes && <span class="order__lnote">{line.notes}</span>}
+              </span>
+              <span class="order__price">{formatINR(line.price * line.qty)}</span>
+            </li>
+          ))}
+        </ul>
+
+        <div class="order__total">
+          <span>Subtotal</span>
+          <span>{formatINR(order.subtotal)}</span>
+        </div>
+
+        {order.notes && <p class="order__note">Note: {order.notes}</p>}
+
+        {canTake && order.status === "pending" && (
+          <div class="actions">
+            <form method="post" action={`/api/staff/orders/${order.code}`}>
+              <input type="hidden" name="action" value="confirm" />
+              <button class="btn-confirm" type="submit">Confirm order</button>
+            </form>
+            <form method="post" action={`/api/staff/orders/${order.code}`}>
+              <input type="hidden" name="action" value="cancel" />
+              <button class="btn-cancel" type="submit">Cancel</button>
+            </form>
+          </div>
+        )}
+
+        {canTake && order.status === "confirmed" && (
+          <div class="actions">
+            <p class="actions__done">Confirmed. The kitchen board will pick it up.</p>
+            <form method="post" action={`/api/staff/orders/${order.code}`}>
+              <input type="hidden" name="action" value="cancel" />
+              <button class="btn-cancel" type="submit">Cancel</button>
+            </form>
+          </div>
+        )}
+      </section>
+    )}
+  </main>
+</AppLayout>
+
+<style>
+  .staff {
+    max-width: var(--container-editorial);
+    margin-inline: auto;
+    padding: var(--space-32) var(--gutter) var(--space-64);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-24);
+  }
+  .staff__bar {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-16);
+    padding-block-end: var(--space-24);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .staff__eyebrow {
+    font-size: var(--fs-caption);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .staff__title {
+    margin-block-start: var(--space-4);
+    font-family: var(--font-display);
+    font-size: var(--fs-display-s);
+    color: var(--text-strong);
+  }
+  .staff__who {
+    display: flex;
+    align-items: center;
+    gap: var(--space-12);
+    font-size: var(--fs-caption);
+  }
+  .staff__name {
+    color: var(--text-strong);
+  }
+  .staff__role {
+    letter-spacing: var(--tracking-meta);
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .staff__signout {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font: inherit;
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-meta);
+    cursor: pointer;
+    border-bottom: 1px solid transparent;
+  }
+  .staff__signout:hover {
+    color: var(--text-strong);
+    border-bottom-color: var(--accent-muted);
+  }
+
+  /* --- Lookup ------------------------------------------------------------- */
+  .lookup {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+  }
+  .lookup__label {
+    font-size: var(--fs-caption);
+    letter-spacing: var(--tracking-meta);
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .lookup__row {
+    display: flex;
+    gap: var(--space-12);
+  }
+  .lookup__input {
+    flex: 1 1 auto;
+    padding: var(--space-12) var(--space-16);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-strong);
+    font: inherit;
+    font-family: var(--font-display);
+    font-size: var(--fs-heading-s);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .lookup__input:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .lookup__go {
+    flex: 0 0 auto;
+    padding-inline: var(--space-24);
+    background: var(--accent);
+    color: var(--color-warm-black);
+    border: none;
+    font: inherit;
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-nav);
+    cursor: pointer;
+  }
+  .lookup__hint {
+    font-size: var(--fs-caption);
+    color: var(--text-muted);
+  }
+
+  /* --- Flash + empty ------------------------------------------------------ */
+  .flash {
+    padding: var(--space-12) var(--space-16);
+    font-size: var(--fs-caption);
+  }
+  .flash--ok {
+    border: 1px solid var(--accent);
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    color: var(--text-strong);
+  }
+  .flash--err {
+    border: 1px solid var(--color-berlin-red);
+    background: color-mix(in srgb, var(--color-berlin-red) 14%, transparent);
+    color: var(--text-strong);
+  }
+  .empty {
+    padding-block: var(--space-32);
+    color: var(--text-muted);
+    text-align: center;
+  }
+
+  /* --- Order card --------------------------------------------------------- */
+  .order {
+    border: 1px solid var(--border-subtle);
+    background: var(--bg-elevated);
+    padding: var(--space-24);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-16);
+  }
+  .order__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-16);
+    padding-block-end: var(--space-16);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .order__code {
+    font-family: var(--font-display);
+    font-size: var(--fs-heading-m);
+    letter-spacing: 0.08em;
+    color: var(--text-strong);
+  }
+  .order__meta {
+    margin-block-start: var(--space-4);
+    font-size: var(--fs-caption);
+    color: var(--text-muted);
+  }
+  .badge {
+    flex: 0 0 auto;
+    padding: var(--space-4) var(--space-12);
+    font-size: var(--fs-caption);
+    letter-spacing: var(--tracking-meta);
+    text-transform: uppercase;
+    border: 1px solid var(--border-subtle);
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+  .badge--pending {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .badge--confirmed,
+  .badge--preparing,
+  .badge--ready,
+  .badge--served {
+    border-color: #4c8b4a;
+    color: #6fae5c;
+  }
+  .badge--cancelled {
+    border-color: var(--color-berlin-red);
+    color: #c76b60;
+  }
+  .order__lines {
+    display: flex;
+    flex-direction: column;
+  }
+  .order__line {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-16);
+    padding-block: var(--space-12);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .order__qty {
+    flex: 0 0 auto;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+  }
+  .order__name {
+    flex: 1 1 auto;
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+  .order__lnote {
+    font-size: var(--fs-caption);
+    color: var(--text-muted);
+  }
+  .order__price {
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+  }
+  .order__total {
+    display: flex;
+    justify-content: space-between;
+    font-size: var(--fs-body-l);
+    color: var(--text-strong);
+  }
+  .order__total span:last-child {
+    font-variant-numeric: tabular-nums;
+  }
+  .order__note {
+    font-size: var(--fs-caption);
+    color: var(--text-muted);
+  }
+
+  /* --- Actions ------------------------------------------------------------ */
+  .actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-16);
+    padding-block-start: var(--space-16);
+    border-top: 1px solid var(--border-subtle);
+    flex-wrap: wrap;
+  }
+  .actions__done {
+    flex: 1 1 auto;
+    font-size: var(--fs-caption);
+    color: var(--text-muted);
+  }
+  .btn-confirm {
+    min-height: var(--btn-height);
+    padding-inline: var(--space-32);
+    background: var(--accent);
+    color: var(--color-warm-black);
+    border: none;
+    font: inherit;
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-nav);
+    cursor: pointer;
+  }
+  .btn-confirm:hover {
+    opacity: 0.9;
+  }
+  .btn-cancel {
+    min-height: var(--btn-height);
+    padding-inline: var(--space-24);
+    background: none;
+    color: var(--text-muted);
+    border: 1px solid var(--border-subtle);
+    font: inherit;
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-nav);
+    cursor: pointer;
+  }
+  .btn-cancel:hover {
+    color: var(--text-strong);
+    border-color: var(--color-berlin-red);
+  }
+
+  @media (max-width: 30rem) {
+    .staff__bar {
+      flex-direction: column;
+    }
+  }
+</style>
