@@ -5,11 +5,12 @@
  * Already-signed-in staff are sent straight through to their destination.
  */
 import AppLayout from "../../layouts/AppLayout.astro";
+import { safeNext } from "../../lib/http/safe-next";
 
 export const prerender = false;
 
 const params = Astro.url.searchParams;
-const next = params.get("next") ?? "/staff";
+const next = safeNext(params.get("next"));
 const error = params.get("error");
 
 // If a valid session already exists, skip the form.
@@ -17,8 +18,7 @@ const {
   data: { user },
 } = await Astro.locals.supabase.auth.getUser();
 if (user) {
-  const safe = next.startsWith("/") && !next.startsWith("//") ? next : "/staff";
-  return Astro.redirect(safe, 302);
+  return Astro.redirect(next, 302);
 }
 
 const ERROR_COPY: Record<string, string> = {

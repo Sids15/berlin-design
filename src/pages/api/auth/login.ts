@@ -7,21 +7,15 @@
  */
 import type { APIRoute } from "astro";
 import { supabaseServer } from "../../../lib/supabase/server";
+import { safeNext } from "../../../lib/http/safe-next";
 
 export const prerender = false;
-
-/** Only allow same-site redirect targets — never an absolute/protocol URL. */
-function safeNext(raw: string | null): string {
-  if (!raw) return "/staff";
-  if (!raw.startsWith("/") || raw.startsWith("//")) return "/staff";
-  return raw;
-}
 
 export const POST: APIRoute = async (context) => {
   const form = await context.request.formData();
   const email = String(form.get("email") ?? "").trim();
   const password = String(form.get("password") ?? "");
-  const next = safeNext(String(form.get("next") ?? "") || null);
+  const next = safeNext(String(form.get("next") ?? ""));
 
   if (!email || !password) {
     return context.redirect(loginUrl(next, "missing"), 303);
