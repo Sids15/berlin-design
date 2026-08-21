@@ -129,7 +129,6 @@ export function initCinema(): void {
       },
     });
     tl.to(proxy, { i: frames.count - 1, ease: "none", duration: 1, onUpdate: render }, 0);
-    tl.to('[data-hero-copy]', { autoAlpha: 0, y: -30, ease: "power2.in", duration: 0.28 }, 0.72);
   }
 
   // The full scroll-motion system (split text, reveals, parallax, clip wipes,

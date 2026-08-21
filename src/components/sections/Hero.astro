@@ -15,7 +15,10 @@
 import { brand, contact } from "../../data/site";
 import Button from "../ui/Button.astro";
 
-const FRAME_COUNT = 130; // keep in sync with scripts/extract-frames.mjs
+// The pour sequence has 130 frames on disk (~10s). The hero scrubs only the
+// first ~4 seconds (≈52 frames), resting on the filled, branded glass; the
+// later frames are still used by The Bar and the Moments gallery.
+const FRAME_COUNT = 52;
 const FRAME_DIR = "/videos/hero/frames";
 ---
 
