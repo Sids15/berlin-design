@@ -57,6 +57,11 @@ const {
     />
   </head>
   <body>
+    <div class="scroll-progress" data-scroll-progress aria-hidden="true"></div>
     <slot />
+    <div class="cursor" data-cursor-el aria-hidden="true">
+      <span class="cursor__ring"></span>
+      <span class="cursor__dot"></span>
+    </div>
   </body>
 </html>

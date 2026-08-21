@@ -1,144 +1,253 @@
 ---
 /**
- * Footer (§20) — a dark panel with rounded corners that lifts to reveal an
- * oversized BERLIN wordmark clipped at the bottom (à la stonegalaxy.co.in),
- * over a brand block + column layout. Champagne wordmark reads on the dark
- * theme where their maroon would not.
+ * Footer (§20) — stonegalaxy-style reveal. The footer container pins; as you
+ * scroll, the dark rounded panel translates UP and uncovers the oversized
+ * BERLIN wordmark behind it on a warm light base, with a small © / location
+ * line at the very bottom. Driven by [data-footer-panel] in animations.ts.
+ * Falls back (no JS) to the panel simply sitting above the revealed wordmark.
  */
 import { brand, nav, contact, social } from "../../data/site";
 const year = new Date().getFullYear();
 ---
 
-<div class="brandfoot mode-night">
-  <footer class="footer">
-    <div class="footer__top container--xl">
-      <a class="footer__wordmark" href="#top" aria-label={`${brand.name}, ${brand.tagline}`}>
-        <span class="footer__name">{brand.name}</span>
-        <span class="footer__tagline">{brand.tagline}</span>
-      </a>
-      <p class="footer__pitch">
-        A rooftop gourmet house &amp; bar, six floors above the city —
-        where global flavours meet crafted cocktails and long Berlin nights.
-      </p>
-    </div>
-
-    <div class="footer__cols container--xl">
-      <nav class="footer__col" aria-label="Sections">
-        <h2 class="footer__heading">Explore</h2>
-        <ul>
-          {nav.map((item) => (
-            <li><a href={item.href}>{item.label}</a></li>
-          ))}
-        </ul>
-      </nav>
-
-      <div class="footer__col">
-        <h2 class="footer__heading">Visit</h2>
-        <address class="footer__address">
-          {contact.address.line1}<br />
-          {contact.address.line2}<br />
-          {contact.address.line3}
-        </address>
-        <p class="footer__hours">{contact.hours}</p>
-      </div>
-
-      <div class="footer__col">
-        <h2 class="footer__heading">Contact</h2>
-        <a class="footer__phone" href={contact.phoneHref}>{contact.phoneDisplay}</a>
-        <ul class="footer__links">
-          <li><a href={contact.whatsappHref} target="_blank" rel="noopener">WhatsApp</a></li>
-          <li><a href={contact.mapsHref} target="_blank" rel="noopener">Directions</a></li>
-          {social.map((s) => (
-            <li><a href={s.href} target="_blank" rel="noopener">{s.label}</a></li>
-          ))}
-        </ul>
+<section class="brandfoot mode-night" data-brandfoot>
+  <div class="brandfoot__pin" data-brandfoot-pin>
+    <!-- Revealed behind the panel -->
+    <div class="brandfoot__reveal" aria-hidden="true">
+      <span class="brandfoot__word">{brand.name}</span>
+      <div class="brandfoot__mini">
+        <p>© {year} {brand.name} {brand.tagline}</p>
+        <p>Vijay Nagar, Indore</p>
       </div>
     </div>
 
-    <div class="footer__base container--xl">
-      <p class="footer__copy">© {year} {brand.name} {brand.tagline}. All rights reserved.</p>
-      <p class="footer__legal">
-        <a href="#top">Privacy Policy</a>
-        <a href="#top">Terms of Use</a>
-      </p>
-      <p class="footer__place">Rooftop Gourmet House · Indore</p>
-    </div>
-  </footer>
+    <!-- The dark panel that lifts away -->
+    <footer class="footer" data-footer-panel>
+      <div class="footer__feature container--xl">
+        <div class="footer__feature-col">
+          <span class="footer__eyebrow">More Berlin</span>
+          <div class="footer__big">
+            {social.map((s) => (
+              <a class="footer__big-link" href={s.href} target="_blank" rel="noopener" data-cursor>
+                {s.label}
+              </a>
+            ))}
+          </div>
+        </div>
+        <div class="footer__feature-col">
+          <span class="footer__eyebrow">Reservations &amp; enquiries</span>
+          <a class="footer__big-link footer__big-link--sm" href={contact.phoneHref} data-cursor>
+            {contact.phoneDisplay}
+          </a>
+          <div class="footer__feature-links">
+            <a href={contact.whatsappHref} target="_blank" rel="noopener">Chat on WhatsApp</a>
+            <a href={contact.mapsHref} target="_blank" rel="noopener">Get directions</a>
+          </div>
+        </div>
+      </div>
 
-  <!-- Scroll gap that uncovers the fixed wordmark behind, bottom-to-top. -->
-  <div class="brandfoot__spacer" aria-hidden="true"></div>
-  <div class="brandfoot__giant" aria-hidden="true">
-    <svg viewBox="0 0 1000 150" preserveAspectRatio="xMidYMid meet" focusable="false">
-      <text
-        x="500"
-        y="128"
-        text-anchor="middle"
-        font-size="176"
-        textLength="962"
-        lengthAdjust="spacingAndGlyphs">{brand.name}</text>
-    </svg>
+      <div class="footer__rule container--xl"><span></span></div>
+
+      <div class="footer__cols container--xl">
+        <div class="footer__col footer__col--brand">
+          <a class="footer__wordmark" href="#top" data-cursor>
+            <span class="footer__name">{brand.name}</span>
+            <span class="footer__tagline">{brand.tagline}</span>
+          </a>
+          <p class="footer__pitch">
+            A rooftop gourmet house &amp; bar, six floors above the city — global
+            flavours, crafted cocktails, and long Berlin nights.
+          </p>
+          <span class="footer__est">Est. Vijay Nagar · Level 06</span>
+        </div>
+
+        <nav class="footer__col" aria-label="Sections">
+          <h2 class="footer__heading">Explore</h2>
+          <ul>{nav.map((i) => <li><a href={i.href}>{i.label}</a></li>)}</ul>
+        </nav>
+
+        <div class="footer__col">
+          <h2 class="footer__heading">Visit</h2>
+          <address class="footer__address">
+            {contact.address.line1}<br />{contact.address.line2}<br />{contact.address.line3}
+          </address>
+          <p class="footer__hours">{contact.hours}</p>
+        </div>
+
+        <div class="footer__col">
+          <h2 class="footer__heading">Contact</h2>
+          <a class="footer__phone" href={contact.phoneHref}>{contact.phoneDisplay}</a>
+          <ul>
+            <li><a href={contact.whatsappHref} target="_blank" rel="noopener">WhatsApp</a></li>
+            <li><a href={contact.mapsHref} target="_blank" rel="noopener">Directions</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer__base">
+        <div class="footer__base-inner container--xl">
+          <p>© {year} {brand.name} {brand.tagline}. All rights reserved.</p>
+          <p class="footer__legal">
+            <a href="#top">Privacy Policy</a>
+            <a href="#top">Terms of Use</a>
+          </p>
+          <p>Rooftop Gourmet House · Indore</p>
+        </div>
+      </div>
+    </footer>
   </div>
-</div>
+</section>
 
 <style>
-  .brandfoot {
+  .brandfoot { position: relative; }
+
+  .brandfoot__pin {
     position: relative;
-    /* Transparent — so the fixed wordmark behind shows through the scroll gap
-       and the panel's rounded corners, instead of a black layer over it. */
-    background-color: transparent;
-    /* Snug to the wordmark's own height (SVG is ~14% of its width) so the page
-       stops scrolling exactly when BERLIN is fully revealed. */
-    --reveal-h: clamp(3.5rem, 14.5vw, 13.5rem);
+    background-color: #e6ddcb; /* warm light reveal base */
+  }
+  /* When enhanced, the container pins full-screen and the panel lifts. */
+  .brandfoot.is-enhanced .brandfoot__pin {
+    min-height: 100svh;
+    overflow: hidden;
+  }
+  .brandfoot.is-enhanced .footer {
+    min-height: 100svh;
   }
 
-  .footer {
+  /* --- Revealed wordmark. Default: sits under the panel. Enhanced: pinned to
+     the bottom, uncovered as the panel lifts. --------------------------------*/
+  .brandfoot__reveal {
     position: relative;
     z-index: 1;
-    background-color: var(--color-charcoal);
-    color: var(--text);
-    padding-block: clamp(4rem, 8vw, 6.5rem) clamp(1.5rem, 3vw, 2.5rem);
-    border-end-start-radius: clamp(2rem, 5vw, 4.5rem);
-    border-end-end-radius: clamp(2rem, 5vw, 4.5rem);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding-block: clamp(2rem, 5vw, 4rem) clamp(2.5rem, 5vw, 4rem);
+  }
+  .brandfoot.is-enhanced .brandfoot__reveal {
+    position: absolute;
+    inset-inline: 0;
+    inset-block-end: 0;
+    height: 24vh;
+    padding-block: 0;
+  }
+  .brandfoot__word {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: clamp(3rem, 15vw, 13rem);
+    line-height: 1;
+    letter-spacing: -0.02em;
+    white-space: nowrap;
+    color: var(--color-berlin-red);
+    user-select: none;
+  }
+  .brandfoot__mini {
+    position: absolute;
+    inset-inline: 0;
+    inset-block-end: 0;
+    padding: var(--gutter);
+    padding-block-end: clamp(1rem, 2vw, 1.75rem);
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-16);
+    font-size: var(--fs-label);
+    letter-spacing: var(--tracking-meta);
+    text-transform: uppercase;
+    color: rgba(23, 21, 18, 0.35);
   }
 
-  /* Brand block */
-  .footer__top {
+  /* --- The dark panel ----------------------------------------------------- */
+  .footer {
+    position: relative;
+    z-index: 10;
+    background-color: var(--color-charcoal);
+    color: var(--text);
+    border-end-start-radius: clamp(2rem, 4vw, 3.75rem);
+    border-end-end-radius: clamp(2rem, 4vw, 3.75rem);
+    box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.45);
+    will-change: transform;
+    padding-block-end: clamp(1rem, 2vw, 1.5rem);
+  }
+
+  .footer__feature {
     margin-inline: auto;
     padding-inline: var(--gutter);
+    padding-block: clamp(3.5rem, 8vw, 8rem) clamp(2.5rem, 5vw, 4rem);
     display: grid;
     grid-template-columns: 1fr;
-    gap: clamp(1.5rem, 4vw, 3rem);
-    padding-block-end: clamp(2.5rem, 5vw, 4rem);
-    border-block-end: 1px solid var(--border-subtle);
+    gap: clamp(2.5rem, 6vw, 5rem);
+  }
+  .footer__eyebrow {
+    display: block;
+    font-size: var(--fs-label);
+    font-weight: 500;
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-block-end: var(--space-24);
+  }
+  .footer__big { display: flex; flex-direction: column; gap: 0.25rem; }
+  .footer__big-link {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 4.5vw, 3.75rem);
+    line-height: 1.12;
+    letter-spacing: -0.02em;
+    color: var(--text-muted);
+    transition: color 0.5s var(--ease-out);
+  }
+  .footer__big-link--sm { font-size: clamp(1.5rem, 3.2vw, 2.75rem); }
+  .footer__big-link:hover { color: var(--text-strong); }
+  .footer__feature-links {
+    margin-block-start: var(--space-24);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-12);
+  }
+  .footer__feature-links a {
+    font-size: var(--fs-caption);
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    transition: color 0.3s var(--ease-out);
+  }
+  .footer__feature-links a:hover { color: var(--accent); }
+
+  .footer__rule { margin-inline: auto; padding-inline: var(--gutter); }
+  .footer__rule span { display: block; height: 1px; background: var(--border-subtle); }
+
+  .footer__cols {
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+    padding-block: clamp(2.5rem, 5vw, 4.5rem);
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: clamp(2.5rem, 4vw, 4rem);
   }
   .footer__wordmark { display: flex; flex-direction: column; line-height: 1; color: var(--text-strong); }
-  .footer__name { font-family: var(--font-display); font-size: clamp(2rem, 4vw, 2.75rem); letter-spacing: 0.14em; }
+  .footer__name { font-family: var(--font-display); font-size: 1.75rem; letter-spacing: 0.14em; }
   .footer__tagline {
     font-size: var(--fs-label);
     font-weight: 500;
     letter-spacing: var(--tracking-label);
     text-transform: uppercase;
     color: var(--text-muted);
-    margin-block-start: 0.5rem;
+    margin-block-start: 0.4rem;
   }
   .footer__pitch {
-    max-width: 34rem;
-    font-size: var(--fs-body-l);
-    line-height: var(--lh-body);
+    margin-block: var(--space-24) var(--space-16);
+    max-width: 26rem;
+    font-size: var(--fs-caption);
+    line-height: 1.7;
     color: var(--text-muted);
   }
-
-  /* Columns */
-  .footer__cols {
-    margin-inline: auto;
-    padding-inline: var(--gutter);
-    padding-block-start: clamp(2.5rem, 5vw, 4rem);
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: clamp(2.5rem, 5vw, 4rem);
+  .footer__est {
+    font-size: var(--fs-label);
+    letter-spacing: var(--tracking-meta);
+    text-transform: uppercase;
+    color: var(--text-muted);
+    opacity: 0.7;
   }
   .footer__heading {
-    font-family: var(--font-ui);
     font-size: var(--fs-label);
     font-weight: 600;
     letter-spacing: var(--tracking-label);
@@ -164,24 +273,20 @@ const year = new Date().getFullYear();
     margin-block-end: var(--space-16);
   }
   .footer__phone:hover { color: var(--accent); }
-  .footer__links { display: flex; flex-direction: column; gap: var(--space-12); }
 
-  /* Legal row */
-  .footer__base {
+  .footer__base { border-block-start: 1px solid var(--border-subtle); }
+  .footer__base-inner {
     margin-inline: auto;
     padding-inline: var(--gutter);
-    margin-block-start: clamp(3rem, 6vw, 5rem);
-    padding-block-start: var(--space-24);
-    border-block-start: 1px solid var(--border-subtle);
+    padding-block: var(--space-24);
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
     gap: var(--space-16) var(--space-40);
   }
-  .footer__copy,
-  .footer__legal,
-  .footer__place {
+  .footer__base p,
+  .footer__legal a {
     font-size: var(--fs-label);
     letter-spacing: var(--tracking-meta);
     text-transform: uppercase;
@@ -191,41 +296,8 @@ const year = new Date().getFullYear();
   .footer__legal a { transition: color 0.3s var(--ease-out); }
   .footer__legal a:hover { color: var(--accent); }
 
-  /* The scroll gap after the panel, and the wordmark fixed behind everything.
-     As the panel scrolls up, its bottom edge rises and uncovers the fixed
-     wordmark from the bottom up — a pure-CSS reveal, no JS needed. */
-  .brandfoot__spacer {
-    height: var(--reveal-h);
-  }
-  .brandfoot__giant {
-    position: fixed;
-    inset-inline: 0;
-    inset-block-end: 0;
-    z-index: -1;
-    height: var(--reveal-h);
-    display: flex;
-    align-items: flex-end;
-    padding-inline: var(--gutter);
-    padding-block-end: clamp(0.5rem, 2vh, 1.5rem);
-    background-color: #d9d0bf; /* warm light reveal base */
-    color: var(--color-berlin-red);
-    line-height: 0;
-    pointer-events: none;
-    user-select: none;
-  }
-  .brandfoot__giant svg {
-    display: block;
-    width: 100%;
-    height: auto;
-  }
-  .brandfoot__giant text {
-    font-family: var(--font-display);
-    font-weight: 400;
-    fill: currentColor;
-  }
-
-  @media (min-width: 48rem) {
-    .footer__top { grid-template-columns: 1fr 1fr; align-items: end; }
-    .footer__cols { grid-template-columns: 1.4fr 1.2fr 1.2fr; }
+  @media (min-width: 60rem) {
+    .footer__feature { grid-template-columns: 1fr 1fr; }
+    .footer__cols { grid-template-columns: 1.5fr 1fr 1.2fr 1fr; }
   }
 </style>

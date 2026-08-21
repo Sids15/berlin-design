@@ -156,4 +156,70 @@ export function initAnimations(): void {
       },
     });
   });
+
+  // --- Footer reveal: pin the container, lift the dark panel to uncover the
+  //     wordmark behind it on the light base (stonegalaxy-style). --------------
+  const brandfoot = document.querySelector<HTMLElement>("[data-brandfoot]");
+  const brandPin = brandfoot?.querySelector<HTMLElement>("[data-brandfoot-pin]");
+  const brandPanel = brandfoot?.querySelector<HTMLElement>("[data-footer-panel]");
+  if (brandfoot && brandPin && brandPanel) {
+    brandfoot.classList.add("is-enhanced");
+    // Lift until the panel's bottom reaches the top of the 24vh reveal zone.
+    const dist = () => brandPanel.offsetHeight - window.innerHeight * 0.76;
+    gsap.to(brandPanel, {
+      y: () => -Math.max(0, dist()),
+      ease: "none",
+      scrollTrigger: {
+        trigger: brandfoot,
+        start: "top top",
+        end: () => "+=" + Math.max(1, dist()),
+        pin: brandPin,
+        scrub: true,
+        invalidateOnRefresh: true,
+      },
+    });
+  }
+
+  // --- Scroll progress bar --------------------------------------------------
+  const progress = document.querySelector<HTMLElement>("[data-scroll-progress]");
+  if (progress) {
+    const update = () => {
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      progress.style.transform = `scaleX(${max > 0 ? window.scrollY / max : 0})`;
+    };
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+  }
+
+  // --- Custom cursor (fine pointer only) ------------------------------------
+  const cursor = document.querySelector<HTMLElement>("[data-cursor-el]");
+  if (cursor && matchMedia("(hover: hover) and (pointer: fine)").matches) {
+    document.documentElement.classList.add("has-cursor");
+    const dot = cursor.querySelector<HTMLElement>(".cursor__dot");
+    const ring = cursor.querySelector<HTMLElement>(".cursor__ring");
+    if (dot && ring) {
+      let mx = innerWidth / 2, my = innerHeight / 2, rx = mx, ry = my;
+      window.addEventListener("mousemove", (e) => {
+        mx = e.clientX;
+        my = e.clientY;
+        dot.style.transform = `translate3d(${mx}px, ${my}px, 0)`;
+      });
+      const loop = () => {
+        rx += (mx - rx) * 0.16;
+        ry += (my - ry) * 0.16;
+        ring.style.transform = `translate3d(${rx}px, ${ry}px, 0)`;
+        requestAnimationFrame(loop);
+      };
+      loop();
+      const grow = () => cursor.classList.add("is-hover");
+      const shrink = () => cursor.classList.remove("is-hover");
+      document
+        .querySelectorAll("a, button, input, select, textarea, [data-cursor]")
+        .forEach((el) => {
+          el.addEventListener("mouseenter", grow);
+          el.addEventListener("mouseleave", shrink);
+        });
+    }
+  }
 }
