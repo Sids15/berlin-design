@@ -66,14 +66,22 @@ const year = new Date().getFullYear();
   </footer>
 
   <div class="brandfoot__giant" aria-hidden="true">
-    <span>{brand.name}</span>
+    <svg viewBox="0 0 1000 150" preserveAspectRatio="xMidYMid meet" focusable="false">
+      <text
+        x="500"
+        y="185"
+        text-anchor="middle"
+        textLength="962"
+        lengthAdjust="spacingAndGlyphs">{brand.name}</text>
+    </svg>
   </div>
 </div>
 
 <style>
   .brandfoot {
     position: relative;
-    background-color: var(--color-void);
+    /* Warm light "reveal" base — the dark panel lifts to show it + the wordmark. */
+    background-color: #d9d0bf;
     overflow: hidden;
   }
 
@@ -177,27 +185,26 @@ const year = new Date().getFullYear();
   .footer__legal a { transition: color 0.3s var(--ease-out); }
   .footer__legal a:hover { color: var(--accent); }
 
-  /* Oversized wordmark revealed beneath the panel, clipped at the bottom. */
+  /* Oversized wordmark (SVG, so it always fits the width and clips cleanly at
+     the bottom via the viewBox). Deep maroon on the light reveal base. */
   .brandfoot__giant {
     position: relative;
     z-index: 1;
-    font-size: clamp(3.75rem, 25vw, 20rem);
-    height: 0.7em; /* reveal the top ~70% of the letters */
-    margin-block-start: clamp(0.75rem, 2vw, 2rem);
-    overflow: hidden;
+    margin-block-start: clamp(0.25rem, 1vw, 1rem);
+    line-height: 0;
+    color: var(--color-berlin-red);
     pointer-events: none;
     user-select: none;
   }
-  .brandfoot__giant span {
+  .brandfoot__giant svg {
     display: block;
-    text-align: center;
+    width: 100%;
+    height: auto;
+  }
+  .brandfoot__giant text {
     font-family: var(--font-display);
     font-weight: 400;
-    font-size: inherit;
-    line-height: 1;
-    letter-spacing: 0.08em;
-    white-space: nowrap;
-    color: var(--accent);
+    fill: currentColor;
   }
 
   @media (min-width: 48rem) {
