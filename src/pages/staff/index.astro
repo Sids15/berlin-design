@@ -140,6 +140,10 @@ function when(iso: string): string {
 
         {order.notes && <p class="order__note">Note: {order.notes}</p>}
 
+        <div class="order__links">
+          <a class="order__link" href={`/staff/orders/${order.code}/slip`}>Print slip</a>
+        </div>
+
         {canTake && order.status === "pending" && (
           <div class="actions">
             <form method="post" action={`/api/staff/orders/${order.code}`}>
@@ -409,6 +413,18 @@ function when(iso: string): string {
   .order__note {
     font-size: var(--fs-caption);
     color: var(--text-muted);
+  }
+  .order__links {
+    display: flex;
+    gap: var(--space-16);
+  }
+  .order__link {
+    font-size: var(--fs-caption);
+    letter-spacing: var(--tracking-nav);
+    text-transform: uppercase;
+    color: var(--accent);
+    border-bottom: 1px solid var(--accent-muted);
+    padding-block-end: var(--space-4);
   }
 
   /* --- Actions ------------------------------------------------------------ */

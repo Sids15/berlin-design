@@ -1,0 +1,220 @@
+---
+/**
+ * Order slip (Feature: printing). A print-optimised ticket for one round —
+ * code, table, items + notes — that staff can send to a receipt/kitchen
+ * printer. Behind the auth middleware (any staff). On screen it's a narrow card
+ * on the dark app; @media print switches to black-on-white receipt stock and
+ * hides the buttons.
+ */
+import AppLayout from "../../../../layouts/AppLayout.astro";
+import { getStaffOrder } from "../../../../lib/orders/staff";
+
+export const prerender = false;
+
+const { supabase } = Astro.locals;
+const code = (Astro.params.code ?? "").toUpperCase();
+const order = await getStaffOrder(supabase, code);
+
+if (!order) Astro.response.status = 404;
+
+function when(iso: string): string {
+  try {
+    return new Date(iso).toLocaleString("en-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      day: "numeric",
+      month: "short",
+    });
+  } catch {
+    return "";
+  }
+}
+---
+
+<AppLayout title={order ? `Slip ${order.code} — Berlin` : "Order not found — Berlin"}>
+  <main class="slipwrap">
+    {!order ? (
+      <p class="slipwrap__missing">No order found for <strong>{code}</strong>.</p>
+    ) : (
+      <>
+        <div class="actions no-print">
+          <a class="actions__back" href={`/staff?code=${order.code}`}>← Back</a>
+          <button id="print-btn" type="button" class="actions__print">Print slip</button>
+        </div>
+
+        <article class="slip">
+          <header class="slip__head">
+            <p class="slip__brand">BERLIN · Haus de Gourmet</p>
+            <p class="slip__kind">Order slip</p>
+          </header>
+
+          <div class="slip__meta">
+            <div><span>Code</span><strong>{order.code}</strong></div>
+            <div><span>Table</span><strong>{order.table_label ?? "—"}</strong></div>
+            <div><span>Placed</span><strong>{when(order.created_at)}</strong></div>
+          </div>
+
+          <ul class="slip__items">
+            {order.items.map((line) => (
+              <li class="slip__item">
+                <span class="slip__qty">{line.qty}×</span>
+                <span class="slip__name">
+                  {line.name}
+                  {line.notes && <span class="slip__note">note: {line.notes}</span>}
+                </span>
+              </li>
+            ))}
+          </ul>
+
+          {order.notes && <p class="slip__ordernote">Order note: {order.notes}</p>}
+          <p class="slip__foot">— Berlin —</p>
+        </article>
+      </>
+    )}
+  </main>
+</AppLayout>
+
+<script>
+  document.getElementById("print-btn")?.addEventListener("click", () => window.print());
+</script>
+
+<style>
+  .slipwrap {
+    max-width: 22rem;
+    margin-inline: auto;
+    padding: var(--space-24) var(--gutter) var(--space-64);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-16);
+  }
+  .slipwrap__missing {
+    padding-block: var(--space-64);
+    text-align: center;
+    color: var(--text-muted);
+  }
+  .actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-16);
+  }
+  .actions__back {
+    font-size: var(--fs-caption);
+    letter-spacing: var(--tracking-meta);
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .actions__print {
+    min-height: 2.5rem;
+    padding-inline: var(--space-24);
+    background: var(--accent);
+    color: var(--color-warm-black);
+    border: none;
+    font: inherit;
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-nav);
+    cursor: pointer;
+  }
+
+  .slip {
+    background: var(--color-ivory);
+    color: var(--color-warm-black);
+    padding: var(--space-24);
+    font-family: var(--font-ui);
+  }
+  .slip__head {
+    text-align: center;
+    padding-block-end: var(--space-12);
+    border-bottom: 1px dashed #9a9184;
+  }
+  .slip__brand {
+    font-size: var(--fs-caption);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+  }
+  .slip__kind {
+    margin-block-start: var(--space-4);
+    font-family: var(--font-display);
+    font-size: var(--fs-heading-s);
+  }
+  .slip__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-8) var(--space-24);
+    padding-block: var(--space-12);
+    border-bottom: 1px dashed #9a9184;
+    font-size: var(--fs-caption);
+  }
+  .slip__meta span {
+    display: block;
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-meta);
+    color: #5b544a;
+  }
+  .slip__meta strong {
+    font-size: var(--fs-body);
+  }
+  .slip__items {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-12);
+    padding-block: var(--space-16);
+  }
+  .slip__item {
+    display: flex;
+    gap: var(--space-12);
+  }
+  .slip__qty {
+    flex: 0 0 auto;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+  }
+  .slip__name {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .slip__note {
+    font-size: var(--fs-caption);
+    color: #5b544a;
+  }
+  .slip__ordernote {
+    padding-block: var(--space-12);
+    border-top: 1px dashed #9a9184;
+    font-size: var(--fs-caption);
+  }
+  .slip__foot {
+    text-align: center;
+    padding-block-start: var(--space-16);
+    font-size: var(--fs-caption);
+    color: #5b544a;
+  }
+
+  @media print {
+    :global(body) {
+      background: #fff !important;
+    }
+    .slipwrap {
+      max-width: none;
+      padding: 0;
+    }
+    .no-print {
+      display: none !important;
+    }
+    .slip {
+      background: #fff;
+      color: #000;
+      padding: 0;
+    }
+    .slip__head,
+    .slip__meta,
+    .slip__ordernote {
+      border-color: #000;
+    }
+    .slip__meta span,
+    .slip__note,
+    .slip__foot {
+      color: #333;
+    }
+  }
+</style>
