@@ -1,48 +1,80 @@
 ---
 /**
- * Customer menu — placeholder shell (Feature 1). The real menu, filters, and
- * cart land in Feature 3. Server-rendered (not prerendered) so it can read the
- * live menu from Supabase.
+ * Customer menu (Feature 3). Server-rendered so it reads the live menu from
+ * Supabase (anon key, available items only) on each request, then hands the
+ * data to the MenuApp island for filtering, search, and the cart. The `?table`
+ * from the QR code rides along so the placed order knows its table.
  */
 import AppLayout from "../../layouts/AppLayout.astro";
+import MenuApp from "../../components/order/MenuApp.tsx";
+import { getCustomerMenu } from "../../lib/menu/queries";
+
+export const prerender = false;
 
 const table = Astro.url.searchParams.get("table");
+const menu = await getCustomerMenu();
+
+// Shape down to just what the island needs (no server-only fields cross over).
+const categories = menu.map((c) => ({
+  id: c.id,
+  name: c.name,
+  items: c.items.map((i) => ({
+    id: i.id,
+    name: i.name,
+    description: i.description,
+    price: Number(i.price),
+    veg_type: i.veg_type,
+    tags: i.tags,
+    is_signature: i.is_signature,
+  })),
+}));
+
+const isEmpty = categories.length === 0;
 ---
 
 <AppLayout title="Menu — Berlin">
-  <main class="menu-shell">
-    <p class="menu-shell__eyebrow">Berlin · Haus de Gourmet</p>
-    <h1 class="menu-shell__title">Menu</h1>
-    <p class="menu-shell__note">
-      {table ? `Table ${table}. ` : ""}The full menu, filters, and cart arrive in Feature 3.
-    </p>
-  </main>
+  {
+    isEmpty ? (
+      <main class="menu-empty">
+        <p class="menu-empty__eyebrow">Berlin · Haus de Gourmet</p>
+        <h1 class="menu-empty__title">The menu is being set</h1>
+        <p class="menu-empty__note">
+          Our kitchen is updating tonight's offering. Please check back in a moment.
+        </p>
+      </main>
+    ) : (
+      <main>
+        <MenuApp client:load categories={categories} table={table} />
+      </main>
+    )
+  }
 </AppLayout>
 
 <style>
-  .menu-shell {
+  .menu-empty {
     min-height: 100svh;
     display: flex;
     flex-direction: column;
     justify-content: center;
     padding: var(--gutter);
-    max-width: var(--container-lg);
+    max-width: var(--container-editorial);
     margin-inline: auto;
+    text-align: center;
   }
-  .menu-shell__eyebrow {
+  .menu-empty__eyebrow {
     font-size: var(--fs-caption);
     letter-spacing: var(--tracking-label);
     text-transform: uppercase;
     color: var(--accent);
   }
-  .menu-shell__title {
+  .menu-empty__title {
     margin-block-start: var(--space-16);
     font-family: var(--font-display);
-    font-size: var(--fs-display-l);
+    font-size: var(--fs-display-s);
     color: var(--text-strong);
   }
-  .menu-shell__note {
-    margin-block-start: var(--space-24);
+  .menu-empty__note {
+    margin: var(--space-24) auto 0;
     color: var(--text-muted);
   }
 </style>

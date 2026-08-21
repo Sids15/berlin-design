@@ -1,0 +1,288 @@
+---
+/**
+ * Order tracking (Feature 3). A customer lands here right after placing an
+ * order. It shows their code + QR (to show a server) and a live status that
+ * flips "Waiting" → "Order placed" once a server accepts it. Server-rendered:
+ * reads the order by code via the admin client (customers have no direct DB
+ * access), then the OrderStatus island polls for the state change.
+ */
+import QRCode from "qrcode";
+import AppLayout from "../../layouts/AppLayout.astro";
+import OrderStatus from "../../components/order/OrderStatus.tsx";
+import { getTrackedOrder } from "../../lib/orders/track";
+import { formatINR } from "../../lib/money";
+
+export const prerender = false;
+
+const code = (Astro.params.code ?? "").toUpperCase();
+const order = await getTrackedOrder(code);
+
+if (!order) {
+  Astro.response.status = 404;
+}
+
+// A QR of the plain code — staff scan or key it in to pull up the order.
+const qrSvg = order
+  ? await QRCode.toString(order.code, {
+      type: "svg",
+      margin: 1,
+      color: { dark: "#171512", light: "#e9e2d4" },
+    })
+  : "";
+---
+
+<AppLayout title={order ? `Order ${order.code} — Berlin` : "Order not found — Berlin"}>
+  {
+    !order ? (
+      <main class="track track--missing">
+        <p class="track__eyebrow">Berlin · Haus de Gourmet</p>
+        <h1 class="track__title">Order not found</h1>
+        <p class="track__note">
+          We couldn't find an order for that code. Please check it, or place a new
+          order from the menu.
+        </p>
+        <a class="track__link" href="/menu">Back to the menu</a>
+      </main>
+    ) : (
+      <main class="track">
+        <header class="track__head">
+          <p class="track__eyebrow">Berlin · Haus de Gourmet</p>
+          <h1 class="track__title">Your order</h1>
+          {order.table_label && <p class="track__table">Table {order.table_label}</p>}
+        </header>
+
+        <OrderStatus client:load code={order.code} initialState={order.state} />
+
+        <section class="ticket" aria-label="Your order code">
+          <div class="ticket__qr" set:html={qrSvg} />
+          <div class="ticket__meta">
+            <p class="ticket__label">Order code</p>
+            <p class="ticket__code">{order.code}</p>
+            <p class="ticket__hint">Show this to a server to confirm your order.</p>
+          </div>
+        </section>
+
+        <section class="summary" aria-label="Order summary">
+          <h2 class="summary__title">Summary</h2>
+          <ul class="summary__list">
+            {order.items.map((line) => (
+              <li class="summary__line">
+                <span class="summary__qty">{line.qty}×</span>
+                <span class="summary__name">{line.name}</span>
+                <span class="summary__price">{formatINR(line.price * line.qty)}</span>
+              </li>
+            ))}
+          </ul>
+          <div class="summary__total">
+            <span>Subtotal</span>
+            <span>{formatINR(order.subtotal)}</span>
+          </div>
+          {order.notes && <p class="summary__notes">Note: {order.notes}</p>}
+        </section>
+
+        <a class="track__link" href="/menu">Order something more</a>
+      </main>
+    )
+  }
+</AppLayout>
+
+<style>
+  .track {
+    max-width: var(--container-editorial);
+    margin-inline: auto;
+    padding: var(--space-40) var(--gutter) var(--space-80);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-32);
+  }
+  .track--missing {
+    min-height: 100svh;
+    justify-content: center;
+    text-align: center;
+  }
+  .track__head {
+    text-align: center;
+  }
+  .track__eyebrow {
+    font-size: var(--fs-caption);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .track__title {
+    margin-block-start: var(--space-8);
+    font-family: var(--font-display);
+    font-size: var(--fs-display-s);
+    color: var(--text-strong);
+  }
+  .track__table {
+    margin-block-start: var(--space-8);
+    font-size: var(--fs-caption);
+    letter-spacing: var(--tracking-meta);
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .track__note {
+    margin: 0 auto;
+    color: var(--text-muted);
+  }
+
+  /* --- Status banner (OrderStatus island) -------------------------------- */
+  .track :global(.status) {
+    display: flex;
+    align-items: center;
+    gap: var(--space-16);
+    padding: var(--space-24);
+    border: 1px solid var(--border-subtle);
+    background: var(--bg-elevated);
+  }
+  .track :global(.status__pulse) {
+    flex: 0 0 auto;
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+  .track :global(.status--waiting .status__pulse) {
+    animation: pulse 1.6s var(--ease-smooth) infinite;
+  }
+  .track :global(.status--placed) {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 12%, var(--bg-elevated));
+  }
+  .track :global(.status--placed .status__pulse) {
+    background: #4c8b4a;
+  }
+  .track :global(.status--cancelled .status__pulse) {
+    background: var(--color-berlin-red);
+  }
+  @keyframes pulse {
+    0%,
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.35;
+      transform: scale(0.7);
+    }
+  }
+  .track :global(.status__title) {
+    font-family: var(--font-display);
+    font-size: var(--fs-heading-s);
+    color: var(--text-strong);
+    letter-spacing: 0;
+  }
+  .track :global(.status__note) {
+    margin-block-start: var(--space-4);
+    font-size: var(--fs-body);
+    color: var(--text-muted);
+  }
+
+  /* --- Ticket (code + QR) ------------------------------------------------- */
+  .ticket {
+    display: flex;
+    align-items: center;
+    gap: var(--space-24);
+    padding: var(--space-24);
+    background: var(--color-ivory);
+    color: var(--color-warm-black);
+  }
+  .ticket__qr {
+    flex: 0 0 auto;
+    width: 8rem;
+    height: 8rem;
+  }
+  .ticket__qr :global(svg) {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  .ticket__label {
+    font-size: var(--fs-caption);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--color-champagne-muted);
+  }
+  .ticket__code {
+    margin-block-start: var(--space-4);
+    font-family: var(--font-display);
+    font-size: var(--fs-display-s);
+    letter-spacing: 0.08em;
+    color: var(--color-warm-black);
+  }
+  .ticket__hint {
+    margin-block-start: var(--space-8);
+    font-size: var(--fs-caption);
+    color: #5b544a;
+  }
+
+  /* --- Summary ------------------------------------------------------------ */
+  .summary__title {
+    font-family: var(--font-display);
+    font-size: var(--fs-heading-m);
+    color: var(--text-strong);
+    padding-block-end: var(--space-16);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .summary__list {
+    display: flex;
+    flex-direction: column;
+  }
+  .summary__line {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-16);
+    padding-block: var(--space-16);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .summary__qty {
+    flex: 0 0 auto;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+  }
+  .summary__name {
+    flex: 1 1 auto;
+    color: var(--text);
+  }
+  .summary__price {
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+  }
+  .summary__total {
+    display: flex;
+    justify-content: space-between;
+    padding-block-start: var(--space-16);
+    font-size: var(--fs-body-l);
+    color: var(--text-strong);
+  }
+  .summary__total span:last-child {
+    font-variant-numeric: tabular-nums;
+  }
+  .summary__notes {
+    margin-block-start: var(--space-12);
+    font-size: var(--fs-caption);
+    color: var(--text-muted);
+  }
+
+  .track__link {
+    align-self: flex-start;
+    font-size: var(--fs-caption);
+    letter-spacing: var(--tracking-nav);
+    text-transform: uppercase;
+    color: var(--accent);
+    border-bottom: 1px solid var(--accent-muted);
+    padding-block-end: var(--space-4);
+  }
+  .track--missing .track__link {
+    align-self: center;
+    margin-block-start: var(--space-24);
+  }
+
+  @media (max-width: 30rem) {
+    .ticket {
+      flex-direction: column;
+      text-align: center;
+    }
+  }
+</style>
