@@ -7,6 +7,7 @@
 export type Role = "manager" | "kitchen" | "server";
 export type VegType = "veg" | "non_veg" | "egg";
 export type OrderSource = "customer" | "server";
+export type TabStatus = "open" | "closed";
 
 export type OrderStatus =
   | "pending"
@@ -64,9 +65,20 @@ export interface Order {
   source: OrderSource;
   subtotal: number;
   notes: string | null;
+  tab_id: string | null;
   created_at: string;
   confirmed_at: string | null;
   confirmed_by: string | null;
+}
+
+/** A table session: the rounds a table orders across one visit, billed together. */
+export interface Tab {
+  id: string;
+  table_label: string;
+  status: TabStatus;
+  opened_at: string;
+  closed_at: string | null;
+  closed_by: string | null;
 }
 
 /** An order with its line items joined in (as the panels consume it). */

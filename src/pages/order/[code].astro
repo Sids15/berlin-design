@@ -80,7 +80,12 @@ const qrSvg = order
           {order.notes && <p class="summary__notes">Note: {order.notes}</p>}
         </section>
 
-        <a class="track__link" href="/menu">Order something more</a>
+        <a
+          class="track__link"
+          href={order.table_label ? `/menu?table=${encodeURIComponent(order.table_label)}` : "/menu"}
+        >
+          Order something more
+        </a>
       </main>
     )
   }

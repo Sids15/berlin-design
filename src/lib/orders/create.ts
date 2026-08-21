@@ -13,6 +13,7 @@
  */
 import { supabaseAdmin } from "../supabase/admin";
 import { generateOrderCode } from "./code";
+import { resolveOpenTab } from "./tabs";
 import type { OrderSource } from "../types";
 
 /** One line as the client submits it — item id + quantity, nothing priced. */
@@ -117,6 +118,10 @@ export async function createOrder(
   const table_label = normalizeText(input.table_label);
   const notes = normalizeText(input.notes);
 
+  // Attach to the table's open tab (or open one) so rounds bill together.
+  // Resolved once — the tab is the same across code-collision retries.
+  const tab_id = await resolveOpenTab(supabase, table_label);
+
   // Insert the order, retrying on the (astronomically rare) code collision.
   for (let attempt = 0; attempt < CODE_RETRIES; attempt++) {
     const code = generateOrderCode();
@@ -125,6 +130,7 @@ export async function createOrder(
       .insert({
         code,
         table_label,
+        tab_id,
         status: autoConfirm ? "confirmed" : "pending",
         source,
         subtotal,
