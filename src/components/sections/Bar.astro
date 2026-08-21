@@ -1,102 +1,132 @@
 ---
 /**
- * The Bar (04) — dark product composition. Reuses a branded-glass frame from
- * the hero pour as the product shot (a deliberate callback), text on the left.
- * The frame is an already-optimized public asset, referenced by URL.
+ * The Bar (04) — centred product showcase (deliberately different from the
+ * side-by-side splits around it). The branded glass stands alone under a
+ * spotlight, headline above, spirits below. Reuses a hero pour frame as a
+ * callback; the frame is an already-optimized public asset.
  */
 import SectionLabel from "../ui/SectionLabel.astro";
 import Button from "../ui/Button.astro";
+
+const pours = ["Old Fashioned", "Smoked Negroni", "Rooftop Spritz", "Rare Single Malts"];
 ---
 
-<section id="bar" class="bar section mode-night" data-journey-section>
-  <div class="bar__grid container--xl">
-    <div class="bar__text">
-      <SectionLabel index="04" data-reveal>The Bar</SectionLabel>
-      <h2 class="bar__headline" data-reveal>
-        Crafted cocktails,<br />curated spirits,<br /><em>good nights.</em>
-      </h2>
-      <p class="bar__copy" data-reveal>
-        A full bar under low light — signature cocktails, a considered spirits
-        list, and a room that hums a little louder as the night goes on.
-      </p>
-      <div class="bar__cta" data-reveal>
-        <Button href="#after-dark" variant="secondary">Explore after dark</Button>
-      </div>
-    </div>
+<section id="bar" class="bar mode-night" data-journey-section>
+  <div class="bar__inner container--xl">
+    <SectionLabel index="04" class="bar__label" data-reveal>The Bar</SectionLabel>
 
-    <figure class="bar__figure" data-reveal>
+    <h2 class="bar__headline" data-split>
+      Crafted cocktails, <em>curated spirits.</em>
+    </h2>
+
+    <figure class="bar__figure">
+      <span class="bar__glow" aria-hidden="true"></span>
       <img
         class="bar__image"
-        src="/videos/hero/frames/frame-0122.webp"
-        width="1600"
-        height="900"
+        src="/videos/hero/frames/frame-0126.webp"
+        width="1200"
+        height="1600"
         loading="lazy"
         decoding="async"
         alt="The signature Berlin glass — whisky over ice, etched crystal"
+        data-clip
       />
-      <figcaption class="bar__figcaption">The signature pour</figcaption>
     </figure>
+
+    <p class="bar__copy" data-reveal>
+      A full bar under low light — signature cocktails, a considered spirits
+      list, and a room that hums a little louder as the night goes on.
+    </p>
+
+    <ul class="bar__pours" data-reveal>
+      {pours.map((p) => <li>{p}</li>)}
+    </ul>
+
+    <div class="bar__cta" data-reveal>
+      <Button href="#after-dark" variant="secondary">Explore after dark</Button>
+    </div>
   </div>
 </section>
 
 <style>
   .bar {
     background-color: var(--color-warm-black);
+    padding-block: var(--space-section-cinematic);
     overflow: clip;
   }
 
-  .bar__grid {
+  .bar__inner {
     margin-inline: auto;
     padding-inline: var(--gutter);
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: clamp(2.5rem, 5vw, 5rem);
+    max-width: var(--container-lg);
+    display: flex;
+    flex-direction: column;
     align-items: center;
+    text-align: center;
   }
-
-  .bar__text { max-width: 32rem; }
 
   .bar__headline {
     margin-block-start: var(--space-24);
+    max-width: 20ch;
     font-family: var(--font-display);
-    font-size: var(--fs-display-s);
-    line-height: 1.05;
+    font-size: var(--fs-display-m);
+    line-height: 1.04;
     letter-spacing: var(--tracking-display);
     color: var(--text-strong);
   }
   .bar__headline em { font-style: italic; color: var(--accent); }
 
+  .bar__figure {
+    position: relative;
+    margin: clamp(2.5rem, 6vh, 4.5rem) 0 0;
+    width: min(24rem, 78vw);
+    aspect-ratio: 3 / 4;
+  }
+
+  /* A soft brass spotlight behind the glass — the only glow, kept subtle. */
+  .bar__glow {
+    position: absolute;
+    inset: -20% -30%;
+    z-index: -1;
+    background: radial-gradient(50% 50% at 50% 45%, rgba(180, 154, 99, 0.22) 0%, rgba(9, 9, 8, 0) 70%);
+  }
+
+  .bar__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    background: var(--color-void);
+  }
+
   .bar__copy {
-    margin-block-start: var(--space-24);
+    margin-block-start: clamp(2.5rem, 6vh, 4rem);
+    max-width: 34rem;
     font-size: var(--fs-body-l);
     line-height: var(--lh-body);
     color: var(--text-muted);
   }
 
-  .bar__cta { margin-block-start: var(--space-40); }
-
-  .bar__figure {
-    margin: 0;
+  .bar__pours {
+    margin-block-start: var(--space-32);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-16) var(--space-32);
+  }
+  .bar__pours li {
     position: relative;
+    font-family: var(--font-display);
+    font-size: var(--fs-heading-s);
+    color: var(--text);
   }
-  .bar__image {
-    width: 100%;
-    aspect-ratio: 4 / 3;
-    object-fit: cover;
-    background: var(--color-void);
-    border: 1px solid var(--border-subtle);
-  }
-  .bar__figcaption {
-    margin-block-start: var(--space-16);
-    text-align: right;
-    font-size: var(--fs-label);
-    font-weight: 500;
-    letter-spacing: var(--tracking-label);
-    text-transform: uppercase;
-    color: var(--text-muted);
+  .bar__pours li:not(:last-child)::after {
+    content: "✦";
+    margin-inline-start: var(--space-32);
+    color: var(--accent);
+    font-size: 0.55em;
+    vertical-align: middle;
   }
 
-  @media (min-width: 60rem) {
-    .bar__grid { grid-template-columns: 0.9fr 1fr; }
-  }
+  .bar__cta { margin-block-start: var(--space-48); }
 </style>

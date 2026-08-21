@@ -23,6 +23,7 @@ import rooftop from "../../assets/rooftop/rooftop-city-night.jpg";
       sizes="100vw"
       loading="lazy"
       class="roof__image"
+      data-parallax="0.12"
     />
     <div class="roof__scrim"></div>
   </div>
@@ -30,7 +31,7 @@ import rooftop from "../../assets/rooftop/rooftop-city-night.jpg";
   <div class="roof__inner container--xl">
     <div class="roof__caption">
       <SectionLabel index="02" data-reveal>The Rooftop</SectionLabel>
-      <h2 class="roof__headline" data-reveal>
+      <h2 class="roof__headline" data-split>
         Above the city,<br />where sunsets<br /><em>turn into stories.</em>
       </h2>
       <p class="roof__copy" data-reveal>
@@ -63,11 +64,10 @@ import rooftop from "../../assets/rooftop/rooftop-city-night.jpg";
 
   .roof__image {
     width: 100%;
-    height: 100%;
+    height: 124%;
+    margin-block-start: -12%;
     object-fit: cover;
     filter: brightness(0.82) contrast(1.05) saturate(0.94);
-    transform: scale(1.06);
-    animation: roof-drift 18s ease-in-out infinite alternate;
   }
 
   .roof__scrim {
@@ -109,10 +109,5 @@ import rooftop from "../../assets/rooftop/rooftop-city-night.jpg";
     font-size: var(--fs-body-l);
     line-height: var(--lh-body);
     color: var(--text-muted);
-  }
-
-  @keyframes roof-drift {
-    from { transform: scale(1.06) translate3d(0, 0, 0); }
-    to { transform: scale(1.12) translate3d(-1.5%, -1.5%, 0); }
   }
 </style>

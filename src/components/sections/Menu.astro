@@ -33,7 +33,7 @@ const menu = [
 <section id="menu" class="menu mode-editorial section" data-journey-section>
   <div class="menu__head container--xl">
     <SectionLabel index="06" data-reveal>The Table</SectionLabel>
-    <h2 class="menu__title" data-reveal>
+    <h2 class="menu__title" data-split>
       A table full of<br /><em>possibilities.</em>
     </h2>
     <p class="menu__intro" data-reveal>
@@ -62,7 +62,7 @@ const menu = [
         </div>
       ))}
       <div class="menu__cta" data-reveal>
-        <Button href="#visit" variant="primary" arrow={false}>Reserve a table</Button>
+        <Button href="#visit" variant="primary" arrow={false} data-magnetic="0.25">Reserve a table</Button>
       </div>
     </div>
 
@@ -76,6 +76,7 @@ const menu = [
         sizes="(max-width: 60rem) 100vw, 42vw"
         loading="lazy"
         class="menu__image"
+        data-clip
       />
       <figcaption class="menu__figcaption">Chef's signature · changes nightly</figcaption>
     </figure>

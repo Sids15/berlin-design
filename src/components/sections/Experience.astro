@@ -18,7 +18,7 @@ import interior from "../../assets/experience/experience-interior.jpg";
     <div class="exp__text">
       <SectionLabel index="01" class="exp__label" data-reveal>The Experience</SectionLabel>
 
-      <h2 class="exp__statement" data-reveal>
+      <h2 class="exp__statement" data-split>
         Long evenings,<br />good company,<br /><em>great flavours.</em>
       </h2>
 
@@ -33,7 +33,7 @@ import interior from "../../assets/experience/experience-interior.jpg";
       </div>
     </div>
 
-    <figure class="exp__figure" data-reveal>
+    <figure class="exp__figure">
       <Picture
         src={interior}
         formats={["avif", "webp"]}
@@ -42,6 +42,7 @@ import interior from "../../assets/experience/experience-interior.jpg";
         widths={[600, 900, 1400]}
         sizes="(max-width: 60rem) 100vw, 45vw"
         class="exp__image"
+        data-clip
       />
       <figcaption class="exp__figcaption">Level 06 · High Street Apollo</figcaption>
     </figure>

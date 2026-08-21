@@ -26,13 +26,14 @@ const guests = ["2 guests", "3 guests", "4 guests", "5 guests", "6+ guests"];
       sizes="100vw"
       loading="lazy"
       class="visit__image"
+      data-parallax="0.12"
     />
     <div class="visit__scrim"></div>
   </div>
 
   <div class="visit__inner container--xl">
     <div class="visit__head">
-      <h2 class="visit__headline" data-reveal>
+      <h2 class="visit__headline" data-split>
         Your table<br /><em>awaits.</em>
       </h2>
       <p class="visit__copy" data-reveal>
@@ -57,7 +58,7 @@ const guests = ["2 guests", "3 guests", "4 guests", "5 guests", "6+ guests"];
           {guests.map((g) => <option>{g}</option>)}
         </select>
       </div>
-      <button class="visit__submit" type="submit">Check availability</button>
+      <button class="visit__submit" type="submit" data-magnetic="0.3">Check availability</button>
     </form>
 
     <div class="visit__contact" data-reveal>
@@ -91,7 +92,9 @@ const guests = ["2 guests", "3 guests", "4 guests", "5 guests", "6+ guests"];
 
   .visit__media { position: absolute; inset: 0; z-index: -2; }
   .visit__image {
-    width: 100%; height: 100%;
+    width: 100%;
+    height: 124%;
+    margin-block-start: -12%;
     object-fit: cover;
     filter: brightness(0.5) contrast(1.05) saturate(0.9);
   }

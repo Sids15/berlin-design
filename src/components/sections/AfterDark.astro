@@ -31,6 +31,7 @@ const nights = [
       sizes="100vw"
       loading="lazy"
       class="dark__image"
+      data-parallax="0.14"
     />
     <div class="dark__scrim"></div>
   </div>
@@ -38,7 +39,7 @@ const nights = [
   <div class="dark__inner container--xl">
     <div class="dark__body">
       <SectionLabel index="05" data-reveal>After Dark</SectionLabel>
-      <h2 class="dark__headline" data-reveal>
+      <h2 class="dark__headline" data-split>
         Music. Nights.<br /><em>Memories.</em>
       </h2>
       <p class="dark__copy" data-reveal>
@@ -82,7 +83,8 @@ const nights = [
   .dark__media { position: absolute; inset: 0; z-index: -2; }
   .dark__image {
     width: 100%;
-    height: 100%;
+    height: 128%;
+    margin-block-start: -14%;
     object-fit: cover;
     filter: brightness(0.62) contrast(1.08) saturate(1.05);
   }

@@ -12,6 +12,7 @@
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
+import { initAnimations } from "./animations";
 
 export function initCinema(): void {
   const prefersReduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -131,43 +132,9 @@ export function initCinema(): void {
     tl.to('[data-hero-copy]', { autoAlpha: 0, y: -30, ease: "power2.in", duration: 0.28 }, 0.72);
   }
 
-  // Section reveals — elements rise and fade in as they enter the viewport.
-  const revealables = gsap.utils.toArray<HTMLElement>("[data-reveal]");
-  if (revealables.length) {
-    gsap.set(revealables, { y: 34, autoAlpha: 0 });
-    ScrollTrigger.batch(revealables, {
-      start: "top 84%",
-      onEnter: (batch) =>
-        gsap.to(batch, {
-          y: 0,
-          autoAlpha: 1,
-          duration: 0.9,
-          ease: "power2.out",
-          stagger: 0.1,
-          overwrite: true,
-        }),
-    });
-  }
-
-  // Count-up numbers when they scroll into view.
-  gsap.utils.toArray<HTMLElement>("[data-count]").forEach((el) => {
-    const target = Number(el.dataset.count) || 0;
-    const decimals = Number(el.dataset.decimals) || 0;
-    const suffix = el.dataset.suffix ?? "";
-    const pad = Number(el.dataset.pad) || 0;
-    const obj = { v: 0 };
-    const write = () => {
-      let s = decimals ? obj.v.toFixed(decimals) : String(Math.round(obj.v));
-      if (pad) s = s.padStart(pad, "0");
-      el.textContent = s + suffix;
-    };
-    ScrollTrigger.create({
-      trigger: el,
-      start: "top 85%",
-      once: true,
-      onEnter: () => gsap.to(obj, { v: target, duration: 1.4, ease: "power1.out", onUpdate: write }),
-    });
-  });
+  // The full scroll-motion system (split text, reveals, parallax, clip wipes,
+  // count-ups, magnetic, horizontal sections).
+  initAnimations();
 
   if (document.fonts?.ready) {
     document.fonts.ready.then(() => ScrollTrigger.refresh());

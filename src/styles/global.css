@@ -121,6 +121,20 @@ p {
   color: var(--text-muted);
 }
 
+/* Split-text line reveal — words rise from behind a mask (set up by JS). */
+[data-split] .line-mask {
+  display: block;
+  overflow: hidden;
+}
+[data-split] .line-inner {
+  display: block;
+  will-change: transform;
+}
+
+[data-parallax] {
+  will-change: transform;
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;
