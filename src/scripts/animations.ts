@@ -157,29 +157,6 @@ export function initAnimations(): void {
     });
   });
 
-  // --- Footer reveal: pin the container, lift the dark panel to uncover the
-  //     wordmark behind it on the light base (stonegalaxy-style). --------------
-  const brandfoot = document.querySelector<HTMLElement>("[data-brandfoot]");
-  const brandPin = brandfoot?.querySelector<HTMLElement>("[data-brandfoot-pin]");
-  const brandPanel = brandfoot?.querySelector<HTMLElement>("[data-footer-panel]");
-  if (brandfoot && brandPin && brandPanel) {
-    brandfoot.classList.add("is-enhanced");
-    // Lift until the panel's bottom reaches the top of the 24vh reveal zone.
-    const dist = () => brandPanel.offsetHeight - window.innerHeight * 0.76;
-    gsap.to(brandPanel, {
-      y: () => -Math.max(0, dist()),
-      ease: "none",
-      scrollTrigger: {
-        trigger: brandfoot,
-        start: "top top",
-        end: () => "+=" + Math.max(1, dist()),
-        pin: brandPin,
-        scrub: true,
-        invalidateOnRefresh: true,
-      },
-    });
-  }
-
   // --- Scroll progress bar --------------------------------------------------
   const progress = document.querySelector<HTMLElement>("[data-scroll-progress]");
   if (progress) {
