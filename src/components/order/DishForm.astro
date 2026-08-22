@@ -105,6 +105,8 @@ const veg = item?.veg_type ?? "veg";
     border: 1px solid var(--border-subtle);
     color: var(--text-strong);
     font: inherit;
+    /* ≥16px so iOS doesn't zoom-and-reflow on focus (body font is 15px). */
+    font-size: max(1rem, var(--fs-body));
   }
   .field__input:focus {
     outline: none;
