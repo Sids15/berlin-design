@@ -20,6 +20,9 @@ const OK_COPY: Record<string, string> = {
   created: "Dish created.",
   saved: "Dish saved.",
   deleted: "Dish deleted.",
+  "cat-created": "Category created.",
+  "cat-saved": "Category saved.",
+  "cat-deleted": "Category deleted.",
 };
 ---
 
@@ -70,6 +73,36 @@ const OK_COPY: Record<string, string> = {
         </section>
       ))
     )}
+
+    <section class="cats">
+      <h2 class="cats__title">Categories</h2>
+      <ul class="cats__list">
+        {menu.map((c) => (
+          <li class="crow">
+            <form class="crow__edit" method="post" action={`/api/admin/categories/${c.id}`}>
+              <input type="hidden" name="action" value="update" />
+              <input class="crow__name" type="text" name="name" value={c.name} aria-label="Category name" />
+              <input class="crow__sort" type="number" name="sort_order" value={c.sort_order} aria-label="Sort order" />
+              <button class="crow__save" type="submit">Save</button>
+            </form>
+            <span class="crow__count">{c.items.length} {c.items.length === 1 ? "dish" : "dishes"}</span>
+            <form method="post" action={`/api/admin/categories/${c.id}`}>
+              <input type="hidden" name="action" value="delete" />
+              <button class="crow__del" type="submit" disabled={c.items.length > 0}
+                title={c.items.length > 0 ? "Move or delete its dishes first" : "Delete category"}>
+                Delete
+              </button>
+            </form>
+          </li>
+        ))}
+      </ul>
+
+      <form class="catnew" method="post" action="/api/admin/categories/new">
+        <input class="crow__name" type="text" name="name" placeholder="New category name" required />
+        <input class="crow__sort" type="number" name="sort_order" value={menu.length} aria-label="Sort order" />
+        <button class="catnew__add" type="submit">+ Add category</button>
+      </form>
+    </section>
   </main>
 </AppLayout>
 
@@ -249,5 +282,99 @@ const OK_COPY: Record<string, string> = {
   }
   .drow__del:hover {
     color: var(--color-berlin-red);
+  }
+
+  /* --- Categories management --------------------------------------------- */
+  .cats {
+    margin-block-start: var(--space-24);
+    padding-block-start: var(--space-24);
+    border-top: 1px solid var(--border-subtle);
+  }
+  .cats__title {
+    font-size: var(--fs-caption);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--accent);
+    padding-block-end: var(--space-16);
+  }
+  .cats__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-12);
+  }
+  .crow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-16);
+    flex-wrap: wrap;
+  }
+  .crow__edit,
+  .catnew {
+    display: flex;
+    align-items: center;
+    gap: var(--space-8);
+  }
+  .catnew {
+    margin-block-start: var(--space-24);
+    flex-wrap: wrap;
+  }
+  .crow__name {
+    padding: var(--space-8) var(--space-12);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-strong);
+    font: inherit;
+  }
+  .crow__sort {
+    width: 4.5rem;
+    padding: var(--space-8) var(--space-12);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-strong);
+    font: inherit;
+  }
+  .crow__name:focus,
+  .crow__sort:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .crow__save,
+  .crow__del {
+    background: none;
+    border: 1px solid var(--border-subtle);
+    color: var(--text-muted);
+    font: inherit;
+    font-size: var(--fs-caption);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-meta);
+    padding: var(--space-8) var(--space-16);
+    cursor: pointer;
+  }
+  .crow__save:hover {
+    color: var(--text-strong);
+    border-color: var(--accent);
+  }
+  .crow__del:hover:not(:disabled) {
+    color: var(--color-berlin-red);
+    border-color: var(--color-berlin-red);
+  }
+  .crow__del:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .crow__count {
+    font-size: var(--fs-caption);
+    color: var(--text-muted);
+  }
+  .catnew__add {
+    background: var(--accent);
+    color: var(--color-warm-black);
+    border: none;
+    font: inherit;
+    font-size: var(--fs-caption);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-nav);
+    padding: var(--space-8) var(--space-24);
+    cursor: pointer;
   }
 </style>
