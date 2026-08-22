@@ -62,7 +62,10 @@ export default function MenuApp({ categories, table }: Props) {
   );
   const hydrated = useRef(false);
 
-  // Poll availability so 86 changes show without a reload.
+  // Keep availability live so a dish 86'd in the kitchen drops off fast. Anon
+  // can't receive Realtime events under RLS (verified), so we poll — quickly,
+  // on mount, and the instant the tab regains focus (the common "flip from the
+  // kitchen tab" case).
   useEffect(() => {
     let alive = true;
     const tick = async () => {
@@ -75,10 +78,18 @@ export default function MenuApp({ categories, table }: Props) {
         /* transient — next tick retries */
       }
     };
-    const id = setInterval(tick, 5000);
+    tick(); // fresh on load
+    const id = setInterval(tick, 2000);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") tick();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
     return () => {
       alive = false;
       clearInterval(id);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
     };
   }, []);
 
