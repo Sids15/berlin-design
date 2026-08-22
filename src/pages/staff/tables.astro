@@ -35,11 +35,15 @@ const labels = [
   ),
 ].slice(0, MAX_LABELS);
 
-const origin = Astro.url.origin;
+// Canonical customer domain, so a printed code is identical no matter where the
+// sheet was generated (production, a preview link, or localhost) — the codes are
+// meant to be printed once and last. Falls back to the request origin when
+// PUBLIC_SITE_URL isn't set.
+const baseUrl = (import.meta.env.PUBLIC_SITE_URL ?? Astro.url.origin).replace(/\/+$/, "");
 
 const cards = await Promise.all(
   labels.map(async (label) => {
-    const url = `${origin}/menu/${encodeURIComponent(label)}`;
+    const url = `${baseUrl}/menu/${encodeURIComponent(label)}`;
     // Dark ink on a white quiet zone — printed on paper, this scans reliably.
     const svg = await QRCode.toString(url, {
       type: "svg",
@@ -78,6 +82,11 @@ const prefill = labels.join(", ");
       <p class="tblq__hint">
         Separate with commas. Each label becomes a QR that opens the menu for that
         table and starts its tab.
+      </p>
+      <p class="tblq__base">
+        Codes point to <span class="tblq__baseurl">{baseUrl}</span> — the same label
+        always makes the same code, so print once. Confirm this is your live site
+        before printing.
       </p>
       <div class="tblq__controls">
         <button class="st-btn st-btn--primary" type="submit">

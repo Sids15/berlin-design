@@ -17,6 +17,18 @@
   font-size: var(--fs-caption);
   color: var(--text-muted);
 }
+.tblq__base {
+  max-width: none;
+  font-size: var(--fs-caption);
+  color: var(--text-muted);
+  border-inline-start: 2px solid var(--accent-muted);
+  padding-inline-start: var(--space-12);
+}
+.tblq__baseurl {
+  color: var(--text-strong);
+  font-variant-numeric: tabular-nums;
+  word-break: break-all;
+}
 .tblq__controls {
   display: flex;
   flex-wrap: wrap;
