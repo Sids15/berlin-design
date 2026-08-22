@@ -7,7 +7,7 @@
 export type Role = "manager" | "kitchen" | "server";
 export type VegType = "veg" | "non_veg" | "egg";
 export type OrderSource = "customer" | "server";
-export type TabStatus = "open" | "closed";
+export type TabStatus = "open" | "closed" | "merged";
 
 export type OrderStatus =
   | "pending"

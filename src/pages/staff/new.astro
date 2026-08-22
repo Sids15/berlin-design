@@ -1,14 +1,18 @@
 ---
 /**
  * Manual order builder (Feature 4b). A server (or manager) builds an order at
- * the table — set a table label, dial in quantities, add a note — and it lands
- * already confirmed. Plain server-rendered form (no island): posts qty_<id>
- * fields to /api/staff/orders/new. Behind the auth middleware, and additionally
- * restricted to roles that take orders.
+ * the table — set a table label, dial in quantities with per-dish steppers, add
+ * a note — and it lands already confirmed. Server-rendered form (no island): a
+ * small vanilla script drives the steppers and the live order bar; each dish
+ * keeps a hidden qty_<id> field so the form posts exactly as before. Behind the
+ * auth middleware, and restricted to roles that take orders.
  */
 import AppLayout from "../../layouts/AppLayout.astro";
+import StationMasthead from "../../components/staff/StationMasthead.astro";
 import { getCustomerMenu } from "../../lib/menu/queries";
 import { formatINR } from "../../lib/money";
+import "../../styles/staff.css";
+import "../../styles/order-builder.css";
 
 export const prerender = false;
 
@@ -25,231 +29,239 @@ const ERROR_COPY: Record<string, string> = {
   empty: "Add at least one dish before creating the order.",
 };
 const errorText = err ? (ERROR_COPY[err] ?? err) : null;
+
+const VEG_LABEL: Record<string, string> = {
+  veg: "Vegetarian",
+  non_veg: "Non-vegetarian",
+  egg: "Contains egg",
+};
 ---
 
 <AppLayout title="Build an order — Berlin">
-  <main class="build">
-    <header class="build__bar">
-      <div>
-        <p class="build__eyebrow">Berlin · Staff</p>
-        <h1 class="build__title">Build an order</h1>
-      </div>
-      <a class="build__back" href="/staff">← Order desk</a>
-    </header>
+  <main class="st-shell build">
+    <StationMasthead eyebrow="Berlin · Back of house" title="Build an order">
+      <a class="st-back" slot="actions" href="/staff">
+        <span aria-hidden="true">←</span> Order desk
+      </a>
+    </StationMasthead>
 
-    {errorText && <p class="flash flash--err" role="alert">{errorText}</p>}
+    {errorText && <p class="st-alert st-alert--error st-rise" role="alert">{errorText}</p>}
 
     {!menu.ok ? (
-      <p class="build__note">The menu couldn't be loaded right now. Please try again.</p>
+      <p class="st-empty st-rise-2">The menu couldn't be loaded right now. Please try again.</p>
     ) : menu.categories.length === 0 ? (
-      <p class="build__note">There are no available dishes to add right now.</p>
+      <p class="st-empty st-rise-2">There are no available dishes to add right now.</p>
     ) : (
-      <form class="build__form" method="post" action="/api/staff/orders/new">
-        <div class="build__meta">
-          <label class="field">
-            <span class="field__label">Table</span>
-            <input class="field__input" type="text" name="table_label" placeholder="e.g. 12" autocomplete="off" />
+      <form class="build__form st-rise-2" method="post" action="/api/staff/orders/new">
+        <section class="build__meta">
+          <label class="st-field">
+            <span class="st-field__label">Table</span>
+            <input class="st-field__input" type="text" name="table_label" placeholder="e.g. 12" autocomplete="off" autofocus />
           </label>
-          <label class="field">
-            <span class="field__label">Order note (optional)</span>
-            <input class="field__input" type="text" name="notes" placeholder="Allergies, timing…" maxlength="280" />
+          <label class="st-field">
+            <span class="st-field__label">Order note (optional)</span>
+            <input class="st-field__input" type="text" name="notes" placeholder="Allergies, timing, coursing…" maxlength="280" />
           </label>
+        </section>
+
+        <div class="build__controls">
+          <label class="build__search">
+            <span class="visually-hidden">Search dishes</span>
+            <input type="search" inputmode="search" placeholder="Search dishes, tags…" autocomplete="off" data-searchinput />
+          </label>
+          <div class="build__filters">
+            <nav class="build__cats" aria-label="Filter by category">
+              <button type="button" class="chip" data-catfilter="all" aria-pressed="true">All</button>
+              {menu.categories.map((c) => (
+                <button type="button" class="chip" data-catfilter={c.id} aria-pressed="false">{c.name}</button>
+              ))}
+            </nav>
+            <div class="build__diet" role="group" aria-label="Dietary filter">
+              <button type="button" class="chip" data-vegfilter="veg" aria-pressed="false">
+                <span class="vegdot vegdot--veg" aria-hidden="true"></span>Veg
+              </button>
+              <button type="button" class="chip" data-vegfilter="non_veg" aria-pressed="false">
+                <span class="vegdot vegdot--non_veg" aria-hidden="true"></span>Non-veg
+              </button>
+            </div>
+          </div>
         </div>
 
         {menu.categories.map((c) => (
-          <section class="build__cat">
-            <h2 class="build__catname">{c.name}</h2>
+          <section class="build__cat" data-cat={c.id}>
+            <header class="build__cathead">
+              <h2 class="build__catname">{c.name}</h2>
+              <span class="build__catrule" aria-hidden="true"></span>
+            </header>
             <ul class="build__list">
               {c.items.map((item) => (
-                <li class="build__item">
-                  <div class="build__itemmeta">
-                    <span class="build__itemname">{item.name}</span>
-                    <span class="build__itemprice">{formatINR(Number(item.price))}</span>
+                <li
+                  class={`dish${item.is_signature ? " dish--sig" : ""}`}
+                  data-qty
+                  data-price={Number(item.price)}
+                  data-veg={item.veg_type}
+                  data-search={`${item.name} ${item.description ?? ""} ${item.tags.join(" ")}`.toLowerCase()}
+                >
+                  <div class="dish__body">
+                    <span class="dish__title">
+                      <span
+                        class={`vegdot vegdot--${item.veg_type}`}
+                        title={VEG_LABEL[item.veg_type] ?? ""}
+                        aria-label={VEG_LABEL[item.veg_type] ?? ""}
+                      ></span>
+                      {item.name}
+                      {item.is_signature && <span class="dish__sig" aria-hidden="true">✦</span>}
+                    </span>
+                    {item.description && <p class="dish__desc">{item.description}</p>}
+                    {(item.is_signature || item.tags.length > 0) && (
+                      <div class="dish__meta">
+                        {item.is_signature && <span class="dish__signword">Signature</span>}
+                        {item.tags.map((t) => <span class="tag">{t.replace(/-/g, " ")}</span>)}
+                      </div>
+                    )}
                   </div>
-                  <input
-                    class="build__qty"
-                    type="number"
-                    name={`qty_${item.id}`}
-                    min="0"
-                    max="50"
-                    step="1"
-                    value="0"
-                    inputmode="numeric"
-                    aria-label={`Quantity of ${item.name}`}
-                  />
+
+                  <div class="dish__actions">
+                    <span class="dish__price">{formatINR(Number(item.price))}</span>
+                    <div class="dish__add">
+                      <button type="button" class="add" data-add aria-label={`Add ${item.name}`}>Add</button>
+                      <div class="stepper" role="group" aria-label={`Quantity of ${item.name}`} data-stepper hidden>
+                        <button type="button" class="stepper__btn" data-dec aria-label={`Remove one ${item.name}`}>−</button>
+                        <span class="stepper__qty" data-val aria-live="polite">0</span>
+                        <button type="button" class="stepper__btn" data-inc aria-label={`Add one ${item.name}`}>+</button>
+                      </div>
+                      <input type="number" name={`qty_${item.id}`} value="0" min="0" max="50" data-input hidden />
+                    </div>
+                  </div>
                 </li>
               ))}
             </ul>
           </section>
         ))}
 
-        <div class="build__submitbar">
-          <button class="build__submit" type="submit">Create &amp; confirm order</button>
+        <p class="build__noresults" role="status" hidden>No dishes match that filter. Clear it to see the full menu.</p>
+
+        <div class="buildbar">
+          <div class="buildbar__info">
+            <span class="buildbar__count" data-count>No dishes yet</span>
+            <span class="buildbar__total" data-total></span>
+          </div>
+          <button class="st-btn st-btn--primary buildbar__submit" type="submit" data-submit disabled>
+            <span>Create &amp; confirm order</span>
+            <svg class="st-btn__arrow" width="30" height="8" viewBox="0 0 30 8" fill="none" aria-hidden="true">
+              <path d="M0 4h28M28 4l-5-3.25M28 4l-5 3.25" stroke="currentColor" stroke-width="1" stroke-linecap="square" />
+            </svg>
+          </button>
         </div>
       </form>
     )}
   </main>
 </AppLayout>
 
-<style>
-  .build {
-    max-width: var(--container-editorial);
-    margin-inline: auto;
-    padding: var(--space-32) var(--gutter) var(--space-96);
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-24);
-  }
-  .build__bar {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: var(--space-16);
-    padding-block-end: var(--space-24);
-    border-bottom: 1px solid var(--border-subtle);
-  }
-  .build__eyebrow {
-    font-size: var(--fs-caption);
-    letter-spacing: var(--tracking-label);
-    text-transform: uppercase;
-    color: var(--accent);
-  }
-  .build__title {
-    margin-block-start: var(--space-4);
-    font-family: var(--font-display);
-    font-size: var(--fs-display-s);
-    color: var(--text-strong);
-  }
-  .build__back {
-    font-size: var(--fs-caption);
-    letter-spacing: var(--tracking-meta);
-    text-transform: uppercase;
-    color: var(--text-muted);
-  }
-  .build__back:hover {
-    color: var(--text-strong);
-  }
-  .build__note {
-    padding-block: var(--space-32);
-    text-align: center;
-    color: var(--text-muted);
-  }
-  .flash--err {
-    padding: var(--space-12) var(--space-16);
-    font-size: var(--fs-caption);
-    border: 1px solid var(--color-berlin-red);
-    background: color-mix(in srgb, var(--color-berlin-red) 14%, transparent);
-    color: var(--text-strong);
-  }
+<script>
+  // Drive the per-dish steppers and the live order bar. Each stepper owns a
+  // hidden number input (qty_<id>) so the form posts exactly as the server
+  // expects; the visible +/− just clamp and mirror it.
+  const groups = Array.from(document.querySelectorAll<HTMLElement>("[data-qty]"));
+  const countEl = document.querySelector<HTMLElement>("[data-count]");
+  const totalEl = document.querySelector<HTMLElement>("[data-total]");
+  const submit = document.querySelector<HTMLButtonElement>("[data-submit]");
+  const fmt = new Intl.NumberFormat("en-IN");
 
-  .build__form {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-32);
-  }
-  .build__meta {
-    display: grid;
-    grid-template-columns: 1fr 2fr;
-    gap: var(--space-16);
-  }
-  .field {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-8);
-  }
-  .field__label {
-    font-size: var(--fs-caption);
-    letter-spacing: var(--tracking-meta);
-    text-transform: uppercase;
-    color: var(--text-muted);
-  }
-  .field__input {
-    padding: var(--space-12) var(--space-16);
-    background: var(--bg-elevated);
-    border: 1px solid var(--border-subtle);
-    color: var(--text-strong);
-    font: inherit;
-  }
-  .field__input:focus {
-    outline: none;
-    border-color: var(--accent);
-  }
-
-  .build__catname {
-    font-family: var(--font-display);
-    font-size: var(--fs-heading-m);
-    color: var(--text-strong);
-    padding-block-end: var(--space-12);
-    border-bottom: 1px solid var(--border-subtle);
-  }
-  .build__list {
-    display: flex;
-    flex-direction: column;
-  }
-  .build__item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-16);
-    padding-block: var(--space-16);
-    border-bottom: 1px solid var(--border-subtle);
-  }
-  .build__itemmeta {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-4);
-    min-width: 0;
-  }
-  .build__itemname {
-    color: var(--text-strong);
-  }
-  .build__itemprice {
-    font-size: var(--fs-caption);
-    color: var(--text-muted);
-    font-variant-numeric: tabular-nums;
-  }
-  .build__qty {
-    flex: 0 0 auto;
-    width: 4.5rem;
-    height: 2.75rem;
-    padding-inline: var(--space-12);
-    text-align: center;
-    font: inherit;
-    font-variant-numeric: tabular-nums;
-    color: var(--text-strong);
-    background: var(--bg-elevated);
-    border: 1px solid var(--border-subtle);
-  }
-  .build__qty:focus {
-    outline: none;
-    border-color: var(--accent);
-  }
-
-  .build__submitbar {
-    position: sticky;
-    inset-block-end: 0;
-    padding-block: var(--space-16);
-    background: var(--color-void);
-    border-top: 1px solid var(--border-subtle);
-  }
-  .build__submit {
-    width: 100%;
-    min-height: var(--btn-height);
-    background: var(--accent);
-    color: var(--color-warm-black);
-    border: none;
-    font: inherit;
-    text-transform: uppercase;
-    letter-spacing: var(--tracking-nav);
-    cursor: pointer;
-  }
-  .build__submit:hover {
-    opacity: 0.9;
-  }
-
-  @media (max-width: 30rem) {
-    .build__meta {
-      grid-template-columns: 1fr;
+  function recompute() {
+    let items = 0;
+    let total = 0;
+    for (const g of groups) {
+      const input = g.querySelector<HTMLInputElement>("[data-input]");
+      const qty = Number(input?.value) || 0;
+      const price = Number(g.dataset.price) || 0;
+      items += qty;
+      total += qty * price;
     }
+    if (countEl) countEl.textContent = items === 0 ? "No dishes yet" : `${items} ${items === 1 ? "dish" : "dishes"}`;
+    if (totalEl) totalEl.textContent = items === 0 ? "" : `₹${fmt.format(total)}`;
+    if (submit) submit.disabled = items === 0;
   }
-</style>
+
+  for (const g of groups) {
+    const input = g.querySelector<HTMLInputElement>("[data-input]");
+    const val = g.querySelector<HTMLElement>("[data-val]");
+    const add = g.querySelector<HTMLButtonElement>("[data-add]");
+    const stepper = g.querySelector<HTMLElement>("[data-stepper]");
+    if (!input || !val || !add || !stepper) continue;
+
+    // qty 0 → the "Add" button; qty > 0 → the stepper (mirrors the guest menu).
+    const set = (n: number) => {
+      const clamped = Math.max(0, Math.min(50, n));
+      input.value = String(clamped);
+      val.textContent = String(clamped);
+      const active = clamped > 0;
+      g.toggleAttribute("data-active", active);
+      add.hidden = active;
+      stepper.hidden = !active;
+      recompute();
+    };
+
+    add.addEventListener("click", () => set(1));
+    g.querySelector<HTMLButtonElement>("[data-inc]")?.addEventListener("click", () => set((Number(input.value) || 0) + 1));
+    g.querySelector<HTMLButtonElement>("[data-dec]")?.addEventListener("click", () => set((Number(input.value) || 0) - 1));
+  }
+
+  recompute();
+
+  // --- Filters: one active category (admin's categories) + veg chips --------
+  // Filtering only changes what's shown — a dish added then filtered away keeps
+  // its quantity and still counts toward the order.
+  const catBtns = Array.from(document.querySelectorAll<HTMLButtonElement>("[data-catfilter]"));
+  const vegBtns = Array.from(document.querySelectorAll<HTMLButtonElement>("[data-vegfilter]"));
+  const searchInput = document.querySelector<HTMLInputElement>("[data-searchinput]");
+  const sections = Array.from(document.querySelectorAll<HTMLElement>(".build__cat"));
+  const noResults = document.querySelector<HTMLElement>(".build__noresults");
+  let activeCat = "all";
+  let query = "";
+  const vegSet = new Set<string>();
+
+  function applyFilters() {
+    const q = query.trim().toLowerCase();
+    let anyVisible = false;
+    for (const section of sections) {
+      // A search spans every course; the category chips only apply when idle.
+      const catMatch = q !== "" || activeCat === "all" || activeCat === section.dataset.cat;
+      let shown = 0;
+      for (const dish of section.querySelectorAll<HTMLElement>(".dish")) {
+        const vegMatch = vegSet.size === 0 || vegSet.has(dish.dataset.veg ?? "");
+        const searchMatch = q === "" || (dish.dataset.search ?? "").includes(q);
+        const show = catMatch && vegMatch && searchMatch;
+        dish.hidden = !show;
+        if (show) shown += 1;
+      }
+      section.hidden = !(catMatch && shown > 0);
+      if (!section.hidden) anyVisible = true;
+    }
+    if (noResults) noResults.hidden = anyVisible;
+  }
+
+  for (const b of catBtns) {
+    b.addEventListener("click", () => {
+      activeCat = b.dataset.catfilter ?? "all";
+      for (const x of catBtns) x.setAttribute("aria-pressed", String(x === b));
+      applyFilters();
+    });
+  }
+  for (const b of vegBtns) {
+    b.addEventListener("click", () => {
+      const v = b.dataset.vegfilter ?? "";
+      if (vegSet.has(v)) vegSet.delete(v);
+      else vegSet.add(v);
+      b.setAttribute("aria-pressed", String(vegSet.has(v)));
+      applyFilters();
+    });
+  }
+  searchInput?.addEventListener("input", () => {
+    query = searchInput.value;
+    applyFilters();
+  });
+
+  applyFilters();
+</script>
+

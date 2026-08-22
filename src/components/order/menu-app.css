@@ -1,71 +1,178 @@
 /* =============================================================================
-   MenuApp — customer ordering island. Phone-first, night mode. Tokens only.
+   MenuApp — "La Carte, day to night".
+
+   The customer menu reads like a printed carte that dims as you scroll: it
+   opens on warm paper in daylight and sinks, course by course, toward the
+   site's candlelit void-and-champagne. The palette is driven from the island
+   (MenuApp.tsx) by writing the semantic color tokens onto the `.menu` root;
+   everything here consumes those tokens and glides between them.
+
+   Legibility rule the ramp guarantees: light grounds always carry dark ink,
+   dark grounds always carry ivory — so no resting course sits in a muddy mid.
    ========================================================================== */
 
+/* --- Root ----------------------------------------------------------------- */
 .menu {
   --sheet-lift: env(safe-area-inset-bottom, 0px);
+  position: relative;
   max-width: var(--container-editorial);
   margin-inline: auto;
   padding-inline: var(--gutter);
   /* room for the sticky cart bar */
-  padding-block-end: calc(var(--space-96) + var(--sheet-lift));
+  padding-block-end: calc(var(--space-120) + var(--sheet-lift));
+  color: var(--text);
 }
 
-/* --- Header --------------------------------------------------------------- */
-.menu__head {
-  padding-block: var(--space-40) var(--space-24);
+/* The day→night ground. Fixed so it fills the viewport at every scroll depth.
+   Its colour is rewritten every animation frame by the island (continuous,
+   scroll-linked), so it must NOT carry a CSS transition — that would lag the
+   frame loop and reintroduce the jump. */
+.menu::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: var(--bg);
+}
+
+/* Thin champagne scroll-progress bar — matches the marketing site. */
+.menu__progress {
+  position: fixed;
+  inset-block-start: 0;
+  inset-inline: 0;
+  height: 2px;
+  z-index: 50;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left;
+  pointer-events: none;
+  will-change: transform;
+}
+
+/* Reveal-on-scroll (armed by the island's IntersectionObserver). */
+.menu [data-reveal] {
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 0.8s var(--ease-out), transform 0.8s var(--ease-out);
+}
+.menu [data-reveal].is-revealed {
+  opacity: 1;
+  transform: none;
+}
+
+/* --- Masthead (the cover of the carte) ------------------------------------ */
+.carte {
+  max-width: 44rem;
+  margin-inline: auto;
+  padding-block: clamp(var(--space-64), 13vw, var(--space-120)) var(--space-40);
   text-align: center;
 }
-.menu__eyebrow {
+/* Global base sets `p { max-width: var(--measure) }`, which pins these lines to
+   a left-aligned box so their centred text drifts left of the title. Undo it
+   here so the whole cover shares one centre axis. */
+.carte p {
+  max-width: none;
+}
+.carte__eyebrow {
   font-size: var(--fs-caption);
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
   color: var(--accent);
 }
-.menu__title {
-  margin-block-start: var(--space-8);
+.carte__title {
+  margin-block-start: var(--space-12);
   font-family: var(--font-display);
-  font-size: var(--fs-display-s);
+  font-size: var(--fs-display-m);
+  line-height: 0.95;
+  letter-spacing: var(--tracking-display);
   color: var(--text-strong);
 }
-.menu__table {
-  margin-block-start: var(--space-8);
+.carte__sub {
+  margin: var(--space-16) auto 0;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: var(--fs-body-l);
+  color: var(--text-muted);
+}
+/* A small centred fleuron flanked by hairlines. */
+.carte__rule {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--space-16);
+  max-width: 15rem;
+  margin: var(--space-32) auto 0;
+  color: var(--accent);
+}
+.carte__rule::before,
+.carte__rule::after {
+  content: "";
+  height: 1px;
+  background: var(--border-strong);
+}
+.carte__mark {
+  font-size: 0.8rem;
+  letter-spacing: 0.3em;
+  /* nudge the glyph's optical centre */
+  transform: translateY(-0.05em);
+}
+.carte__meta {
+  margin-block-start: var(--space-24);
   font-size: var(--fs-caption);
-  letter-spacing: var(--tracking-meta);
+  letter-spacing: var(--tracking-label);
   text-transform: uppercase;
   color: var(--text-muted);
 }
+.carte__table {
+  display: inline-block;
+  margin-block-start: var(--space-24);
+  padding: var(--space-8) var(--space-16);
+  font-size: var(--fs-caption);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-strong);
+  border: 1px solid var(--border-strong);
+}
 
-/* --- Controls (sticky) ---------------------------------------------------- */
+/* --- Controls (sticky stationery) ----------------------------------------- */
 .menu__controls {
   position: sticky;
   inset-block-start: 0;
   z-index: 10;
   display: flex;
   flex-direction: column;
-  gap: var(--space-12);
+  gap: var(--space-16);
   padding-block: var(--space-16);
-  background: linear-gradient(
-    to bottom,
-    var(--bg) 78%,
-    color-mix(in srgb, var(--bg) 0%, transparent)
-  );
-  background-color: var(--bg);
+  /* translucent wash of the current ground so rows read as they pass under */
+  background: color-mix(in srgb, var(--bg) 90%, transparent);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  border-block-end: 1px solid var(--border-subtle);
 }
 
+.menu__search {
+  display: flex;
+  justify-content: center;
+}
 .menu__search input {
-  width: 100%;
-  height: 3rem;
-  padding-inline: var(--space-16);
+  width: min(100%, 22rem);
+  height: 2.75rem;
+  padding-block: var(--space-8);
   font-family: var(--font-ui);
   font-size: var(--fs-body);
   color: var(--text-strong);
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-subtle);
-  border-radius: 0; /* rectangular per the system */
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border-strong);
+  border-radius: 0;
+  text-align: center;
+  letter-spacing: 0.02em;
 }
 .menu__search input::placeholder {
   color: var(--text-muted);
+  letter-spacing: 0.03em;
+  text-transform: none;
+  font-size: var(--fs-body);
 }
 .menu__search input:focus-visible {
   border-color: var(--accent);
@@ -74,6 +181,8 @@
 
 .menu__filters {
   display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
   gap: var(--space-8);
 }
 .chip {
@@ -87,18 +196,19 @@
   color: var(--text-muted);
   background: transparent;
   border: 1px solid var(--border-subtle);
-  transition: color 0.3s var(--ease-out), border-color 0.3s var(--ease-out),
-    background-color 0.3s var(--ease-out);
+  transition: color 0.25s var(--ease-out), border-color 0.25s var(--ease-out),
+    background-color 0.25s var(--ease-out);
 }
 .chip[aria-pressed="true"] {
   color: var(--text-strong);
   border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
 }
 
 .menu__jump {
   display: flex;
-  gap: var(--space-16);
+  justify-content: safe center;
+  gap: var(--space-24);
   overflow-x: auto;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
@@ -114,126 +224,203 @@
   text-transform: uppercase;
   color: var(--text-muted);
   border-bottom: 1px solid transparent;
-  transition: color 0.3s var(--ease-out), border-color 0.3s var(--ease-out);
+  transition: color 0.25s var(--ease-out), border-color 0.25s var(--ease-out);
 }
-.jump:hover {
-  color: var(--text);
+.jump:hover,
+.jump:focus-visible {
+  color: var(--text-strong);
   border-color: var(--accent);
 }
 
-/* --- Sections & rows ------------------------------------------------------ */
+/* --- Courses -------------------------------------------------------------- */
 .menu__empty {
-  margin-block: var(--space-64);
+  margin-block: var(--space-96);
+  max-width: none;
   text-align: center;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: var(--fs-body-l);
   color: var(--text-muted);
 }
 .menu__sections {
   display: flex;
   flex-direction: column;
-  gap: var(--space-48);
-  padding-block-start: var(--space-24);
+  gap: clamp(var(--space-64), 12vw, var(--space-120));
+  padding-block-start: clamp(var(--space-48), 9vw, var(--space-96));
 }
-.section {
-  /* override the global .section block padding for this compact list */
-  padding-block: 0;
-  scroll-margin-block-start: 8rem;
+.course {
+  scroll-margin-block-start: 9rem;
 }
-.section__name {
+.course__head {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--space-24);
+  margin-block-end: var(--space-40);
+}
+.course__head::before,
+.course__head::after {
+  content: "";
+  height: 1px;
+  background: var(--border-subtle);
+}
+.course__center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-12);
+  text-align: center;
+}
+.course__index {
   font-family: var(--font-display);
+  font-style: italic;
   font-size: var(--fs-heading-m);
-  color: var(--text-strong);
-  padding-block-end: var(--space-16);
-  border-bottom: 1px solid var(--border-subtle);
+  line-height: 1;
+  color: var(--accent);
 }
-.section__list {
+.course__name {
+  font-family: var(--font-display);
+  font-size: var(--fs-display-s);
+  line-height: 1;
+  letter-spacing: var(--tracking-display);
+  color: var(--text-strong);
+  white-space: nowrap;
+}
+
+.course__list {
   display: flex;
   flex-direction: column;
 }
 
-.row {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-16);
+/* --- Dish (a printed menu line) ------------------------------------------- */
+.dish {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  column-gap: var(--space-24);
+  align-items: center;
+  padding-inline: var(--space-12);
   padding-block: var(--space-24);
-  border-bottom: 1px solid var(--border-subtle);
+  border-block-end: 1px solid var(--border-subtle);
+  transition: background-color 0.25s var(--ease-out), box-shadow 0.25s var(--ease-out);
 }
-.row__body {
-  flex: 1 1 auto;
+@media (hover: hover) {
+  .dish:hover {
+    background: color-mix(in srgb, var(--accent) 6%, transparent);
+  }
+}
+/* Signature dishes carry a faint candlelight wash and a gold edge. */
+.dish--sig {
+  background: color-mix(in srgb, var(--accent) 4%, transparent);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+@media (hover: hover) {
+  .dish--sig:hover {
+    background: color-mix(in srgb, var(--accent) 9%, transparent);
+  }
+}
+.dish__body {
   min-width: 0;
 }
-.row__head {
+.dish__line {
   display: flex;
+  align-items: baseline;
+  gap: var(--space-12);
+}
+.dish__title {
+  display: inline-flex;
   align-items: center;
   gap: var(--space-8);
-}
-.row__name {
   font-family: var(--font-display);
   font-size: var(--fs-heading-s);
   color: var(--text-strong);
-  letter-spacing: 0;
 }
-.row__signature {
+.dish__sig {
+  font-size: 0.7rem;
+  color: var(--accent);
+  transform: translateY(-0.15em);
+}
+/* the dotted leader that ties name → price, the carte's signature move */
+.dish__leader {
+  flex: 1 1 auto;
+  align-self: center;
+  min-width: 1.5rem;
+  border-block-end: 1px dotted var(--border-strong);
+}
+.dish__price {
+  font-family: var(--font-display);
+  font-size: var(--fs-heading-s);
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.dish__desc {
+  margin-block-start: var(--space-8);
+  max-width: var(--measure);
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: var(--fs-body);
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+/* Signature + tags on one line, tied together with hairline mid-dots so they
+   can never run together (e.g. "VEGAN · SPICY", never "VEGANSPICY"). */
+.dish__meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+  margin-block-start: var(--space-12);
+}
+.dish__meta > * + *::before {
+  content: "·";
+  margin-inline-end: var(--space-8);
+  color: var(--text-muted);
+}
+.dish__signword {
   font-size: var(--fs-label);
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
   color: var(--accent);
-  border: 1px solid var(--accent-muted);
-  padding: 2px var(--space-8);
-}
-.row__desc {
-  margin-block-start: var(--space-8);
-  max-width: var(--measure);
-  font-size: var(--fs-body);
-  color: var(--text-muted);
-}
-.row__foot {
-  display: flex;
-  align-items: center;
-  gap: var(--space-16);
-  margin-block-start: var(--space-12);
-  flex-wrap: wrap;
-}
-.row__price {
-  font-size: var(--fs-body-l);
-  color: var(--text);
-}
-.row__tags {
-  display: inline-flex;
-  gap: var(--space-8);
-  flex-wrap: wrap;
 }
 .tag {
   font-size: var(--fs-label);
-  letter-spacing: var(--tracking-meta);
+  letter-spacing: var(--tracking-label);
   text-transform: uppercase;
   color: var(--text-muted);
 }
 
-.row__action {
-  flex: 0 0 auto;
+.dish__add {
+  align-self: center;
 }
+
+/* Add button — a hairline that fills with candlelight on touch. */
 .add {
-  min-width: 4.5rem;
+  min-width: 4.25rem;
   min-height: 2.5rem;
   padding-inline: var(--space-16);
   font-size: var(--fs-caption);
   letter-spacing: var(--tracking-nav);
   text-transform: uppercase;
-  color: var(--text-strong);
-  border: 1px solid var(--accent);
-  transition: background-color 0.3s var(--ease-out), color 0.3s var(--ease-out);
+  color: var(--accent);
+  border: 1px solid var(--accent-muted);
+  transition: background-color 0.25s var(--ease-out), color 0.25s var(--ease-out),
+    border-color 0.25s var(--ease-out), transform 0.15s var(--ease-out);
 }
 .add:hover,
 .add:focus-visible {
   background: var(--accent);
-  color: var(--color-void);
+  color: var(--bg);
+  border-color: var(--accent);
+}
+.add:active {
+  transform: scale(0.95);
 }
 
 /* --- Stepper -------------------------------------------------------------- */
 .stepper {
   display: inline-flex;
   align-items: center;
-  border: 1px solid var(--accent);
+  border: 1px solid var(--accent-muted);
 }
 .stepper__btn {
   width: 2.5rem;
@@ -245,16 +432,17 @@
 }
 .stepper__btn:hover {
   background: var(--accent);
-  color: var(--color-void);
+  color: var(--bg);
 }
 .stepper__qty {
   min-width: 2rem;
   text-align: center;
+  font-family: var(--font-display);
   font-variant-numeric: tabular-nums;
   color: var(--text-strong);
 }
 
-/* --- Veg marker ----------------------------------------------------------- */
+/* --- Veg marker (Indian convention — meaning is fixed, not themed) -------- */
 .vegdot {
   --dot: 0.5rem;
   position: relative;
@@ -263,6 +451,7 @@
   height: 0.95rem;
   flex: 0 0 auto;
   border: 1.5px solid currentColor;
+  transition: none;
 }
 .vegdot::after {
   content: "";
@@ -273,6 +462,7 @@
   height: var(--dot);
   border-radius: 50%;
   background: currentColor;
+  transition: none;
 }
 .vegdot--veg {
   color: #4c8b4a;
@@ -285,6 +475,8 @@
 }
 
 /* --- Sticky cart bar ------------------------------------------------------ */
+/* text = the current ground, so it always sits with high contrast on the
+   accent (dark ink on daylight gold, ivory on candlelit champagne). */
 .cartbar {
   position: fixed;
   inset-inline: var(--gutter);
@@ -297,10 +489,11 @@
   gap: var(--space-16);
   height: var(--btn-height);
   padding-inline: var(--space-16);
-  color: var(--color-void);
+  color: var(--bg);
   background: var(--accent);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 14px 44px rgba(0, 0, 0, 0.45);
   animation: cartbar-in 0.4s var(--ease-out);
+  transition: transform 0.5s var(--ease-out);
 }
 @keyframes cartbar-in {
   from {
@@ -314,11 +507,24 @@
   min-width: 1.75rem;
   height: 1.75rem;
   padding-inline: var(--space-4);
+  font-family: var(--font-display);
   font-size: var(--fs-caption);
   font-variant-numeric: tabular-nums;
   color: var(--accent);
-  background: var(--color-void);
+  background: var(--bg);
   border-radius: 50%;
+  animation: count-bump 0.4s var(--ease-out);
+}
+@keyframes count-bump {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.28);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 .cartbar__label {
   flex: 1 1 auto;
@@ -329,6 +535,7 @@
   font-weight: 600;
 }
 .cartbar__total {
+  font-family: var(--font-display);
   font-size: var(--fs-body-l);
   font-variant-numeric: tabular-nums;
 }
@@ -346,6 +553,7 @@
   position: absolute;
   inset: 0;
   background: rgba(9, 9, 8, 0.6);
+  -webkit-backdrop-filter: blur(2px);
   backdrop-filter: blur(2px);
   animation: fade-in 0.3s var(--ease-out);
 }
@@ -376,15 +584,15 @@
 .sheet__grabber {
   width: 2.5rem;
   height: 3px;
-  margin: var(--space-4) auto var(--space-12);
+  margin: var(--space-4) auto var(--space-16);
   background: var(--border-strong);
-  border-radius: 3px;
 }
 .sheet__head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   padding-block-end: var(--space-16);
+  border-block-end: 1px solid var(--border-subtle);
 }
 .sheet__title {
   font-family: var(--font-display);
@@ -396,6 +604,7 @@
   letter-spacing: var(--tracking-nav);
   text-transform: uppercase;
   color: var(--text-muted);
+  transition: color 0.25s var(--ease-out);
 }
 .sheet__close:hover {
   color: var(--text);
@@ -407,7 +616,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-16);
-  padding-block: var(--space-8);
+  padding-block: var(--space-16);
 }
 .line {
   padding-block-end: var(--space-16);
@@ -415,15 +624,18 @@
 }
 .line__top {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: var(--space-8);
 }
 .line__name {
   flex: 1 1 auto;
   min-width: 0;
+  font-family: var(--font-display);
+  font-size: var(--fs-heading-s);
   color: var(--text-strong);
 }
 .line__price {
+  font-family: var(--font-display);
   font-variant-numeric: tabular-nums;
   color: var(--text);
 }
@@ -443,6 +655,7 @@
   color: var(--text-strong);
   background: var(--bg);
   border: 1px solid var(--border-subtle);
+  border-radius: 0;
 }
 .line__note::placeholder {
   color: var(--text-muted);
@@ -459,7 +672,8 @@
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  font-size: var(--fs-body-l);
+  font-family: var(--font-display);
+  font-size: var(--fs-heading-s);
   color: var(--text-strong);
 }
 .sheet__total span:last-child {
@@ -486,11 +700,18 @@
   letter-spacing: var(--tracking-nav);
   text-transform: uppercase;
   font-weight: 600;
-  color: var(--color-void);
+  color: var(--bg);
   background: var(--accent);
   transition: opacity 0.3s var(--ease-out);
 }
 .place:disabled {
   opacity: 0.6;
   cursor: progress;
+}
+
+/* --- Wider than a phone: let the carte breathe ---------------------------- */
+@media (min-width: 48rem) {
+  .dish {
+    column-gap: var(--space-40);
+  }
 }

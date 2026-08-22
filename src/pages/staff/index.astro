@@ -6,9 +6,11 @@
  * is guaranteed here. Reads through the authenticated client (RLS applies).
  */
 import AppLayout from "../../layouts/AppLayout.astro";
+import StationMasthead from "../../components/staff/StationMasthead.astro";
 import PendingQueue from "../../components/order/PendingQueue.tsx";
 import { getStaffOrder, getPendingOrders } from "../../lib/orders/staff";
 import { formatINR } from "../../lib/money";
+import "../../styles/staff.css";
 
 export const prerender = false;
 
@@ -49,47 +51,61 @@ function when(iso: string): string {
 ---
 
 <AppLayout title="Staff console — Berlin">
-  <main class="staff">
-    <header class="staff__bar">
-      <div>
-        <p class="staff__eyebrow">Berlin · Staff</p>
-        <h1 class="staff__title">Order desk</h1>
-      </div>
-      <div class="staff__who">
-        {profile!.role === "manager" && <a class="staff__link" href="/admin">Menu</a>}
-        {canTake && <a class="staff__link" href="/staff/tabs">Tabs</a>}
-        {canTake && <a class="staff__build" href="/staff/new">+ Build order</a>}
-        <span class="staff__name">{profile!.name || "Staff"}</span>
-        <span class="staff__role">{profile!.role}</span>
+  <main class="st-shell desk">
+    <StationMasthead title="Order desk">
+      <div class="st-actions" slot="actions">
+        <nav class="st-nav" aria-label="Staff sections">
+          {profile!.role === "manager" && <a class="st-navlink" href="/admin">Menu</a>}
+          {canTake && <a class="st-navlink" href="/staff/tabs">Tabs</a>}
+          {canTake && (
+            <a class="st-cta" href="/staff/new">
+              <span aria-hidden="true">＋</span> Build order
+            </a>
+          )}
+        </nav>
+        <span class="st-actions__div" aria-hidden="true"></span>
+        <span class="st-pass">
+          {profile!.name && profile!.name.trim().toLowerCase() !== profile!.role && (
+            <span class="st-pass__name">{profile!.name}</span>
+          )}
+          <span class="st-pass__role">{profile!.role}</span>
+        </span>
         <form method="post" action="/api/auth/logout">
-          <button class="staff__signout" type="submit">Sign out</button>
+          <button class="st-signout" type="submit">Sign out</button>
         </form>
       </div>
-    </header>
+    </StationMasthead>
 
     {canTake && <PendingQueue client:load initialOrders={pending} />}
 
-    <form class="lookup" method="get" action="/staff">
-      <label class="lookup__label" for="code">Order code</label>
+    <form class={`lookup st-rise-2 ${!order ? "lookup--hero" : ""}`} method="get" action="/staff">
+      <label class="lookup__label" for="code">Look up an order</label>
       <div class="lookup__row">
-        <input
-          class="lookup__input"
-          id="code"
-          name="code"
-          value={rawCode}
-          placeholder="e.g. 3FTBUB"
-          autocomplete="off"
-          autocapitalize="characters"
-          spellcheck="false"
-          autofocus
-        />
-        <button class="lookup__go" type="submit">Look up</button>
+        <div class="lookup__field">
+          <input
+            class="lookup__input"
+            id="code"
+            name="code"
+            value={rawCode}
+            placeholder="3FTBUB"
+            autocomplete="off"
+            autocapitalize="characters"
+            spellcheck="false"
+            autofocus
+          />
+        </div>
+        <button class="lookup__go st-btn st-btn--primary" type="submit">
+          <span>Look up</span>
+          <svg class="st-btn__arrow" width="30" height="8" viewBox="0 0 30 8" fill="none" aria-hidden="true">
+            <path d="M0 4h28M28 4l-5-3.25M28 4l-5 3.25" stroke="currentColor" stroke-width="1" stroke-linecap="square" />
+          </svg>
+        </button>
       </div>
-      <p class="lookup__hint">Read the code from the customer's screen or QR.</p>
+      <p class="lookup__hint">Read the six-character code from the guest's screen or QR.</p>
     </form>
 
     {ok && (
-      <p class="flash flash--ok" role="status">
+      <p class="st-alert st-alert--ok st-rise" role="status">
         {ok === "confirmed"
           ? `Order ${rawCode} confirmed — the table has been told.`
           : ok === "created"
@@ -97,261 +113,220 @@ function when(iso: string): string {
             : `Order ${rawCode} cancelled.`}
       </p>
     )}
-    {err && <p class="flash flash--err" role="alert">{err}</p>}
+    {err && <p class="st-alert st-alert--error st-rise" role="alert">{err}</p>}
 
     {notFound && (
-      <p class="empty">No order found for <strong>{rawCode}</strong>. Check the code and try again.</p>
-    )}
-
-    {!rawCode && !ok && (
-      <p class="empty">Enter an order code above to review and confirm it.</p>
+      <p class="st-empty">No order found for <strong>{rawCode}</strong>. Check the code and try again.</p>
     )}
 
     {order && (
-      <section class="order" aria-label={`Order ${order.code}`}>
-        <header class="order__head">
-          <div>
-            <p class="order__code">{order.code}</p>
-            <p class="order__meta">
-              {order.table_label ? `Table ${order.table_label}` : "No table"} ·
-              {order.source === "customer" ? " Customer order" : " Server order"} ·
-              {" "}{when(order.created_at)}
-            </p>
+      <div class="ticket st-rise-2">
+        <section class="docket" aria-label={`Order ${order.code}`}>
+          <header class="docket__head">
+            <div class="docket__ident">
+              <p class="docket__label">Docket</p>
+              <p class="docket__code">{order.code}</p>
+              <p class="docket__meta">
+                {order.table_label ? `Table ${order.table_label}` : "No table"} ·
+                {order.source === "customer" ? " Guest order" : " Server order"} ·
+                {" "}{when(order.created_at)}
+              </p>
+            </div>
+            <span class={`badge badge--${order.status}`}>{STATUS_LABEL[order.status]}</span>
+          </header>
+
+          <ul class="docket__lines">
+            {order.items.map((line) => (
+              <li class="docket__line">
+                <span class="docket__qty">{line.qty}×</span>
+                <span class="docket__name">
+                  {line.name}
+                  {line.notes && <span class="docket__lnote">{line.notes}</span>}
+                </span>
+                <span class="docket__price">{formatINR(line.price * line.qty)}</span>
+              </li>
+            ))}
+          </ul>
+
+          <div class="docket__total">
+            <span>Subtotal</span>
+            <span>{formatINR(order.subtotal)}</span>
           </div>
-          <span class={`badge badge--${order.status}`}>{STATUS_LABEL[order.status]}</span>
-        </header>
 
-        <ul class="order__lines">
-          {order.items.map((line) => (
-            <li class="order__line">
-              <span class="order__qty">{line.qty}×</span>
-              <span class="order__name">
-                {line.name}
-                {line.notes && <span class="order__lnote">{line.notes}</span>}
-              </span>
-              <span class="order__price">{formatINR(line.price * line.qty)}</span>
-            </li>
-          ))}
-        </ul>
+          {order.notes && <p class="docket__note">Note — {order.notes}</p>}
 
-        <div class="order__total">
-          <span>Subtotal</span>
-          <span>{formatINR(order.subtotal)}</span>
-        </div>
-
-        {order.notes && <p class="order__note">Note: {order.notes}</p>}
-
-        <div class="order__links">
-          <a class="order__link" href={`/staff/orders/${order.code}/slip`}>Print slip</a>
-          {order.tab_id && <a class="order__link" href={`/staff/tabs/${order.tab_id}`}>Bill (Table {order.table_label})</a>}
-        </div>
-
-        {canTake && order.status === "pending" && (
-          <div class="actions">
-            <form method="post" action={`/api/staff/orders/${order.code}`}>
-              <input type="hidden" name="action" value="confirm" />
-              <button class="btn-confirm" type="submit">Confirm order</button>
-            </form>
-            <form method="post" action={`/api/staff/orders/${order.code}`}>
-              <input type="hidden" name="action" value="cancel" />
-              <button class="btn-cancel" type="submit">Cancel</button>
-            </form>
+          <div class="docket__links">
+            <a class="docket__link" href={`/staff/orders/${order.code}/slip`}>Print slip</a>
+            {order.tab_id && <a class="docket__link" href={`/staff/tabs/${order.tab_id}`}>Bill · Table {order.table_label}</a>}
           </div>
-        )}
 
-        {canTake && order.status === "confirmed" && (
-          <div class="actions">
-            <p class="actions__done">Confirmed. The kitchen board will pick it up.</p>
-            <form method="post" action={`/api/staff/orders/${order.code}`}>
-              <input type="hidden" name="action" value="cancel" />
-              <button class="btn-cancel" type="submit">Cancel</button>
-            </form>
-          </div>
-        )}
-      </section>
+          {canTake && order.status === "pending" && (
+            <div class="actions">
+              <form method="post" action={`/api/staff/orders/${order.code}`}>
+                <input type="hidden" name="action" value="confirm" />
+                <button class="st-btn st-btn--primary actions__confirm" type="submit">
+                  <span>Confirm order</span>
+                  <svg class="st-btn__arrow" width="30" height="8" viewBox="0 0 30 8" fill="none" aria-hidden="true">
+                    <path d="M0 4h28M28 4l-5-3.25M28 4l-5 3.25" stroke="currentColor" stroke-width="1" stroke-linecap="square" />
+                  </svg>
+                </button>
+              </form>
+              <form method="post" action={`/api/staff/orders/${order.code}`}>
+                <input type="hidden" name="action" value="cancel" />
+                <button class="st-btn st-btn--ghost" type="submit">Cancel</button>
+              </form>
+            </div>
+          )}
+
+          {canTake && order.status === "confirmed" && (
+            <div class="actions">
+              <p class="actions__done">Confirmed. The kitchen board will pick it up.</p>
+              <form method="post" action={`/api/staff/orders/${order.code}`}>
+                <input type="hidden" name="action" value="cancel" />
+                <button class="st-btn st-btn--ghost" type="submit">Cancel</button>
+              </form>
+            </div>
+          )}
+        </section>
+        <div class="docket__perf" aria-hidden="true"></div>
+      </div>
     )}
   </main>
 </AppLayout>
 
 <style>
-  .staff {
-    max-width: var(--container-editorial);
-    margin-inline: auto;
-    padding: var(--space-32) var(--gutter) var(--space-64);
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-24);
-  }
-  .staff__bar {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: var(--space-16);
-    padding-block-end: var(--space-24);
-    border-bottom: 1px solid var(--border-subtle);
-  }
-  .staff__eyebrow {
-    font-size: var(--fs-caption);
-    letter-spacing: var(--tracking-label);
-    text-transform: uppercase;
-    color: var(--accent);
-  }
-  .staff__title {
-    margin-block-start: var(--space-4);
-    font-family: var(--font-display);
-    font-size: var(--fs-display-s);
-    color: var(--text-strong);
-  }
-  .staff__who {
-    display: flex;
-    align-items: center;
-    gap: var(--space-12);
-    font-size: var(--fs-caption);
-  }
-  .staff__name {
-    color: var(--text-strong);
-  }
-  .staff__role {
-    letter-spacing: var(--tracking-meta);
-    text-transform: uppercase;
-    color: var(--accent);
-  }
-  .staff__link {
-    letter-spacing: var(--tracking-meta);
-    text-transform: uppercase;
-    color: var(--text-muted);
-  }
-  .staff__link:hover {
-    color: var(--text-strong);
-  }
-  .staff__build {
-    padding: var(--space-4) var(--space-12);
-    border: 1px solid var(--accent);
-    color: var(--accent);
-    letter-spacing: var(--tracking-meta);
-    text-transform: uppercase;
-    white-space: nowrap;
-  }
-  .staff__build:hover {
-    background: color-mix(in srgb, var(--accent) 12%, transparent);
-  }
-  .staff__signout {
-    background: none;
-    border: none;
-    color: var(--text-muted);
-    font: inherit;
-    text-transform: uppercase;
-    letter-spacing: var(--tracking-meta);
-    cursor: pointer;
-    border-bottom: 1px solid transparent;
-  }
-  .staff__signout:hover {
-    color: var(--text-strong);
-    border-bottom-color: var(--accent-muted);
-  }
-
   /* --- Lookup ------------------------------------------------------------- */
   .lookup {
     display: flex;
     flex-direction: column;
-    gap: var(--space-8);
+    gap: var(--space-16);
+  }
+  .lookup--hero {
+    align-items: center;
+    text-align: center;
+    padding-block: clamp(var(--space-16), 3vh, var(--space-32));
   }
   .lookup__label {
-    font-size: var(--fs-caption);
-    letter-spacing: var(--tracking-meta);
+    font-size: var(--fs-label);
+    font-weight: 500;
+    letter-spacing: var(--tracking-label);
     text-transform: uppercase;
     color: var(--text-muted);
   }
   .lookup__row {
     display: flex;
-    gap: var(--space-12);
+    align-items: flex-end;
+    gap: var(--space-16);
+  }
+  .lookup--hero .lookup__row {
+    width: 100%;
+    max-width: 32rem;
+  }
+  .lookup__field {
+    position: relative;
+    flex: 1 1 auto;
+  }
+  .lookup__field::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    inset-block-end: 0;
+    height: 1px;
+    background: var(--accent);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.45s var(--ease-out);
+  }
+  .lookup__field:focus-within::after {
+    transform: scaleX(1);
   }
   .lookup__input {
-    flex: 1 1 auto;
-    padding: var(--space-12) var(--space-16);
-    background: var(--bg-elevated);
-    border: 1px solid var(--border-subtle);
+    width: 100%;
+    padding: var(--space-12) 0;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border-strong);
     color: var(--text-strong);
     font: inherit;
     font-family: var(--font-display);
-    font-size: var(--fs-heading-s);
-    letter-spacing: 0.08em;
+    font-size: var(--fs-heading-m);
+    letter-spacing: 0.14em;
     text-transform: uppercase;
+    border-radius: 0;
+  }
+  .lookup__input::placeholder {
+    color: var(--text-muted);
+    opacity: 0.45;
   }
   .lookup__input:focus {
     outline: none;
-    border-color: var(--accent);
   }
   .lookup__go {
     flex: 0 0 auto;
-    padding-inline: var(--space-24);
-    background: var(--accent);
-    color: var(--color-warm-black);
-    border: none;
-    font: inherit;
-    text-transform: uppercase;
-    letter-spacing: var(--tracking-nav);
-    cursor: pointer;
   }
   .lookup__hint {
+    max-width: none;
     font-size: var(--fs-caption);
     color: var(--text-muted);
   }
 
-  /* --- Flash + empty ------------------------------------------------------ */
-  .flash {
-    padding: var(--space-12) var(--space-16);
-    font-size: var(--fs-caption);
+  /* --- The docket — a kitchen pass slip (the signature) ------------------- */
+  .ticket {
+    filter: drop-shadow(0 24px 40px rgba(0, 0, 0, 0.35));
   }
-  .flash--ok {
-    border: 1px solid var(--accent);
-    background: color-mix(in srgb, var(--accent) 12%, transparent);
-    color: var(--text-strong);
-  }
-  .flash--err {
-    border: 1px solid var(--color-berlin-red);
-    background: color-mix(in srgb, var(--color-berlin-red) 14%, transparent);
-    color: var(--text-strong);
-  }
-  .empty {
-    padding-block: var(--space-32);
-    color: var(--text-muted);
-    text-align: center;
-  }
-
-  /* --- Order card --------------------------------------------------------- */
-  .order {
-    border: 1px solid var(--border-subtle);
+  .docket {
     background: var(--bg-elevated);
-    padding: var(--space-24);
+    border-top: 2px solid var(--accent);
+    padding: clamp(var(--space-24), 4vw, var(--space-40));
     display: flex;
     flex-direction: column;
-    gap: var(--space-16);
+    gap: var(--space-24);
   }
-  .order__head {
+  /* Torn, perforated bottom edge — this is a printed docket. */
+  .docket__perf {
+    height: 0.75rem;
+    background: var(--bg-elevated);
+    -webkit-mask: radial-gradient(0.42rem at 50% 100%, transparent 96%, #000)
+      0 100% / 0.9rem 0.75rem repeat-x;
+    mask: radial-gradient(0.42rem at 50% 100%, transparent 96%, #000)
+      0 100% / 0.9rem 0.75rem repeat-x;
+  }
+
+  .docket__head {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
     gap: var(--space-16);
-    padding-block-end: var(--space-16);
-    border-bottom: 1px solid var(--border-subtle);
+    padding-block-end: var(--space-24);
+    border-bottom: 1px dashed var(--accent-muted);
   }
-  .order__code {
+  .docket__label {
+    font-size: var(--fs-label);
+    font-weight: 500;
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .docket__code {
+    margin-block-start: var(--space-8);
     font-family: var(--font-display);
-    font-size: var(--fs-heading-m);
-    letter-spacing: 0.08em;
+    font-size: var(--fs-heading-l);
+    line-height: 1;
+    letter-spacing: 0.12em;
     color: var(--text-strong);
   }
-  .order__meta {
-    margin-block-start: var(--space-4);
+  .docket__meta {
+    margin-block-start: var(--space-12);
+    max-width: none;
     font-size: var(--fs-caption);
     color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
   }
   .badge {
     flex: 0 0 auto;
     padding: var(--space-4) var(--space-12);
-    font-size: var(--fs-caption);
-    letter-spacing: var(--tracking-meta);
+    font-size: var(--fs-label);
+    letter-spacing: var(--tracking-label);
     text-transform: uppercase;
     border: 1px solid var(--border-subtle);
     color: var(--text-muted);
@@ -372,61 +347,90 @@ function when(iso: string): string {
     border-color: var(--color-berlin-red);
     color: #c76b60;
   }
-  .order__lines {
+
+  .docket__lines {
     display: flex;
     flex-direction: column;
   }
-  .order__line {
+  .docket__line {
     display: flex;
     align-items: baseline;
     gap: var(--space-16);
-    padding-block: var(--space-12);
+    padding-block: var(--space-16);
     border-bottom: 1px solid var(--border-subtle);
   }
-  .order__qty {
+  .docket__line:first-child {
+    padding-block-start: 0;
+  }
+  .docket__qty {
     flex: 0 0 auto;
+    min-width: 2ch;
     color: var(--accent);
     font-variant-numeric: tabular-nums;
   }
-  .order__name {
+  .docket__name {
     flex: 1 1 auto;
     color: var(--text);
     display: flex;
     flex-direction: column;
     gap: var(--space-4);
   }
-  .order__lnote {
+  .docket__lnote {
     font-size: var(--fs-caption);
     color: var(--text-muted);
   }
-  .order__price {
+  .docket__price {
+    flex: 0 0 auto;
     font-variant-numeric: tabular-nums;
     color: var(--text);
   }
-  .order__total {
+  .docket__total {
     display: flex;
     justify-content: space-between;
+    align-items: baseline;
+    gap: var(--space-16);
+    padding-block-start: var(--space-4);
     font-size: var(--fs-body-l);
     color: var(--text-strong);
   }
-  .order__total span:last-child {
-    font-variant-numeric: tabular-nums;
-  }
-  .order__note {
-    font-size: var(--fs-caption);
+  .docket__total span:first-child {
+    font-size: var(--fs-label);
+    font-weight: 500;
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
     color: var(--text-muted);
   }
-  .order__links {
-    display: flex;
-    gap: var(--space-16);
+  .docket__total span:last-child {
+    font-family: var(--font-display);
+    font-size: var(--fs-heading-m);
+    font-variant-numeric: tabular-nums;
   }
-  .order__link {
+  .docket__note {
+    max-width: none;
+    padding: var(--space-12) var(--space-16);
     font-size: var(--fs-caption);
+    color: var(--text);
+    background: color-mix(in srgb, var(--accent) 7%, transparent);
+    border-inline-start: 2px solid var(--accent-muted);
+  }
+  .docket__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-24);
+  }
+  .docket__link {
+    font-size: var(--fs-caption);
+    font-weight: 500;
     letter-spacing: var(--tracking-nav);
     text-transform: uppercase;
     color: var(--accent);
     border-bottom: 1px solid var(--accent-muted);
     padding-block-end: var(--space-4);
+    transition: color 0.3s var(--ease-out), border-color 0.3s var(--ease-out);
+  }
+  .docket__link:hover {
+    color: var(--text-strong);
+    border-color: var(--accent);
   }
 
   /* --- Actions ------------------------------------------------------------ */
@@ -434,48 +438,34 @@ function when(iso: string): string {
     display: flex;
     align-items: center;
     gap: var(--space-16);
-    padding-block-start: var(--space-16);
-    border-top: 1px solid var(--border-subtle);
+    padding-block-start: var(--space-24);
+    border-top: 1px dashed var(--accent-muted);
     flex-wrap: wrap;
   }
+  .actions__confirm {
+    min-width: 15rem;
+  }
   .actions__done {
-    flex: 1 1 auto;
+    flex: 1 1 12rem;
     font-size: var(--fs-caption);
     color: var(--text-muted);
   }
-  .btn-confirm {
-    min-height: var(--btn-height);
-    padding-inline: var(--space-32);
-    background: var(--accent);
-    color: var(--color-warm-black);
-    border: none;
-    font: inherit;
-    text-transform: uppercase;
-    letter-spacing: var(--tracking-nav);
-    cursor: pointer;
-  }
-  .btn-confirm:hover {
-    opacity: 0.9;
-  }
-  .btn-cancel {
-    min-height: var(--btn-height);
-    padding-inline: var(--space-24);
-    background: none;
-    color: var(--text-muted);
-    border: 1px solid var(--border-subtle);
-    font: inherit;
-    text-transform: uppercase;
-    letter-spacing: var(--tracking-nav);
-    cursor: pointer;
-  }
-  .btn-cancel:hover {
-    color: var(--text-strong);
-    border-color: var(--color-berlin-red);
-  }
 
-  @media (max-width: 30rem) {
-    .staff__bar {
+  @media (max-width: 34rem) {
+    .lookup__row {
       flex-direction: column;
+      align-items: stretch;
+      gap: var(--space-24);
+    }
+    .lookup__go {
+      width: 100%;
+    }
+    .actions {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .actions__confirm {
+      min-width: 0;
     }
   }
 </style>

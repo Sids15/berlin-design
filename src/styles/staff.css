@@ -1,0 +1,294 @@
+/* =============================================================================
+   BERLIN — Haus de Gourmet · Staff area ("The Pass")
+   Shared back-of-house vocabulary: shell, actions, fields, buttons, alerts.
+   Page-unique pieces (the docket, the lookup, tab rows) stay scoped per page.
+   Consumes design tokens only — never invents color, type, or spacing.
+   ========================================================================== */
+
+/* --- Shell ---------------------------------------------------------------- */
+.st-shell {
+  max-width: var(--container-editorial);
+  margin-inline: auto;
+  padding: var(--space-40) var(--gutter) var(--space-96);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-32);
+}
+
+/* --- Masthead actions (slotted, so styled globally) ----------------------- */
+.st-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-16);
+}
+.st-actions__div {
+  flex: 0 0 auto;
+  width: 1px;
+  height: 1.5rem;
+  background: var(--border-subtle);
+}
+.st-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-16);
+}
+/* Every action shares one type size + line-height so the row sits on one line. */
+.st-navlink,
+.st-signout,
+.st-pass__role {
+  font-family: var(--font-ui);
+  font-size: var(--fs-caption);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: var(--tracking-nav);
+  text-transform: uppercase;
+}
+.st-navlink {
+  color: var(--text-muted);
+  border-bottom: 1px solid transparent;
+  padding-block-end: 2px;
+  transition: color 0.3s var(--ease-out), border-color 0.3s var(--ease-out);
+}
+.st-navlink:hover {
+  color: var(--text-strong);
+  border-bottom-color: var(--accent-muted);
+}
+.st-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  padding: var(--space-8) var(--space-16);
+  font-family: var(--font-ui);
+  font-size: var(--fs-caption);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: var(--tracking-nav);
+  text-transform: uppercase;
+  color: var(--accent);
+  border: 1px solid var(--accent-muted);
+  white-space: nowrap;
+  transition: color 0.3s var(--ease-out), border-color 0.3s var(--ease-out),
+    background-color 0.3s var(--ease-out);
+}
+.st-cta:hover {
+  color: var(--color-warm-black);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+/* Identity — the server's "pass card". Inline when only the role shows. */
+.st-pass {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-8);
+}
+/* The name reads as a name (mixed case), the role as a small champagne tag. */
+.st-pass__name {
+  font-family: var(--font-ui);
+  font-size: var(--fs-caption);
+  font-weight: 500;
+  line-height: 1;
+  color: var(--text-strong);
+}
+.st-pass__role {
+  color: var(--accent);
+}
+.st-signout {
+  color: var(--text-muted);
+  border-bottom: 1px solid transparent;
+  transition: color 0.3s var(--ease-out), border-color 0.3s var(--ease-out);
+}
+.st-signout:hover {
+  color: var(--text-strong);
+  border-bottom-color: var(--accent-muted);
+}
+
+/* Back link — quiet return arrow */
+.st-back {
+  font-family: var(--font-ui);
+  font-size: var(--fs-caption);
+  font-weight: 500;
+  letter-spacing: var(--tracking-nav);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  transition: color 0.3s var(--ease-out), gap 0.3s var(--ease-out);
+}
+.st-back:hover {
+  color: var(--text-strong);
+  gap: var(--space-12);
+}
+
+/* --- Fields (underline treatment, echoing the sign-in door) --------------- */
+.st-field {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+.st-field__label {
+  font-size: var(--fs-label);
+  font-weight: 500;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  transition: color 0.3s var(--ease-out);
+}
+.st-field:focus-within .st-field__label {
+  color: var(--accent);
+}
+.st-field__input {
+  width: 100%;
+  padding: var(--space-12) 0;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border-strong);
+  color: var(--text-strong);
+  font: inherit;
+  font-size: var(--fs-body-l);
+  border-radius: 0;
+}
+.st-field__input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+.st-field__input:focus {
+  outline: none;
+}
+.st-field::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: 0;
+  height: 1px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.45s var(--ease-out);
+}
+.st-field:focus-within::after {
+  transform: scaleX(1);
+}
+.st-field__input:-webkit-autofill,
+.st-field__input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text-strong);
+  -webkit-box-shadow: 0 0 0 1000px var(--color-void) inset;
+  caret-color: var(--text-strong);
+  transition: background-color 9999s ease-out 0s;
+}
+
+/* --- Buttons -------------------------------------------------------------- */
+.st-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-16);
+  min-height: var(--btn-height);
+  padding-inline: var(--space-32);
+  font: inherit;
+  font-weight: 600;
+  font-size: var(--fs-caption);
+  letter-spacing: var(--tracking-nav);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background-color 0.35s var(--ease-out), color 0.35s var(--ease-out),
+    border-color 0.35s var(--ease-out), transform 0.2s var(--ease-out);
+}
+.st-btn:active {
+  transform: translateY(1px);
+}
+.st-btn:disabled {
+  opacity: 0.7;
+  cursor: progress;
+}
+.st-btn--primary {
+  background: var(--accent);
+  color: var(--color-warm-black);
+  border: 1px solid var(--accent);
+  justify-content: space-between;
+}
+.st-btn--primary:hover:not(:disabled) {
+  background: var(--color-white);
+  border-color: var(--color-white);
+}
+.st-btn--primary .st-btn__arrow {
+  transition: transform 0.35s var(--ease-out);
+}
+.st-btn--primary:hover:not(:disabled) .st-btn__arrow {
+  transform: translateX(4px);
+}
+.st-btn--ghost {
+  background: none;
+  color: var(--text-muted);
+  border: 1px solid var(--border-strong);
+}
+.st-btn--ghost:hover:not(:disabled) {
+  color: var(--text-strong);
+  border-color: var(--color-berlin-red);
+}
+
+/* --- Alerts (left-rule, echoing the sign-in door) ------------------------- */
+.st-alert {
+  max-width: none;
+  padding: var(--space-16) var(--space-20, 1.25rem);
+  font-size: var(--fs-caption);
+  line-height: 1.5;
+  color: var(--text);
+  border-inline-start: 2px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 9%, transparent);
+}
+.st-alert strong {
+  color: var(--text-strong);
+}
+.st-alert--ok {
+  border-inline-start-color: #4c8b4a;
+  background: color-mix(in srgb, #4c8b4a 12%, transparent);
+}
+.st-alert--error {
+  border-inline-start-color: var(--color-berlin-red);
+  background: color-mix(in srgb, var(--color-berlin-red) 14%, transparent);
+}
+
+/* --- Empty state — an invitation, not a shrug ----------------------------- */
+.st-empty {
+  max-width: none;
+  padding-block: var(--space-64);
+  text-align: center;
+  color: var(--text-muted);
+}
+.st-empty strong {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Entry motion --------------------------------------------------------- */
+@media (prefers-reduced-motion: no-preference) {
+  .st-rise {
+    animation: st-rise var(--dur-reveal) var(--ease-out) both;
+  }
+  .st-rise-2 {
+    animation: st-rise var(--dur-reveal) var(--ease-out) 90ms both;
+  }
+  .st-rise-3 {
+    animation: st-rise var(--dur-reveal) var(--ease-out) 180ms both;
+  }
+  @keyframes st-rise {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+@media (max-width: 34rem) {
+  .st-shell {
+    padding-block-start: var(--space-32);
+    gap: var(--space-24);
+  }
+}

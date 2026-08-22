@@ -1,12 +1,14 @@
 ---
 /**
- * Open tabs (Feature: billing). Lists the tables with an open tab and a running
- * total, so a server can pull up a table's collective bill. Behind the auth
- * middleware; billing is for roles that take orders (manager, server).
+ * Open tabs (Feature: billing). The floor as a ledger — every table with an open
+ * tab, its rounds and running total, so a server can pull up a collective bill.
+ * Behind the auth middleware; billing is for roles that take orders.
  */
 import AppLayout from "../../../layouts/AppLayout.astro";
+import StationMasthead from "../../../components/staff/StationMasthead.astro";
 import { getOpenTabs } from "../../../lib/orders/tabs";
 import { formatINR } from "../../../lib/money";
+import "../../../styles/staff.css";
 
 export const prerender = false;
 
@@ -16,6 +18,7 @@ if (profile!.role !== "manager" && profile!.role !== "server") {
 }
 
 const tabs = await getOpenTabs(supabase);
+const floorTotal = tabs.reduce((s, t) => s + t.subtotal, 0);
 
 function when(iso: string): string {
   try {
@@ -27,107 +30,145 @@ function when(iso: string): string {
 ---
 
 <AppLayout title="Open tabs — Berlin">
-  <main class="tabs">
-    <header class="tabs__bar">
-      <div>
-        <p class="tabs__eyebrow">Berlin · Staff</p>
-        <h1 class="tabs__title">Open tabs</h1>
-      </div>
-      <a class="tabs__back" href="/staff">← Order desk</a>
-    </header>
+  <main class="st-shell tabs">
+    <StationMasthead eyebrow="Berlin · Back of house" title="Open tabs">
+      <a class="st-back" slot="actions" href="/staff">
+        <span aria-hidden="true">←</span> Order desk
+      </a>
+    </StationMasthead>
 
     {tabs.length === 0 ? (
-      <p class="tabs__empty">No open tabs. A tab opens when a table places its first order.</p>
+      <p class="st-empty st-rise-2">No open tabs. A tab opens when a table places its first order.</p>
     ) : (
-      <ul class="tabs__list">
-        {tabs.map((t) => (
-          <li class="tabrow">
-            <a class="tabrow__link" href={`/staff/tabs/${t.id}`}>
-              <span class="tabrow__table">Table {t.table_label}</span>
-              <span class="tabrow__meta">
-                {t.order_count} {t.order_count === 1 ? "round" : "rounds"} · since {when(t.opened_at)}
-              </span>
-              <span class="tabrow__total">{formatINR(t.subtotal)}</span>
-            </a>
-          </li>
-        ))}
-      </ul>
+      <>
+        <p class="tabs__summary st-rise-2">
+          <span class="tabs__stat"><strong>{tabs.length}</strong> {tabs.length === 1 ? "table" : "tables"} open</span>
+          <span class="tabs__dot" aria-hidden="true">·</span>
+          <span class="tabs__stat"><strong class="tabs__amt">{formatINR(floorTotal)}</strong> running on the floor</span>
+        </p>
+
+        <ul class="ledger st-rise-2">
+          {tabs.map((t) => (
+            <li class="ledger__row">
+              <a class="ledger__link" href={`/staff/tabs/${t.id}`}>
+                <span class="ledger__table"><span class="ledger__word">Table</span> {t.table_label}</span>
+                <span class="ledger__meta">
+                  {t.order_count} {t.order_count === 1 ? "round" : "rounds"} · since {when(t.opened_at)}
+                </span>
+                <span class="ledger__total">{formatINR(t.subtotal)}</span>
+                <svg class="ledger__go" width="28" height="8" viewBox="0 0 28 8" fill="none" aria-hidden="true">
+                  <path d="M0 4h26M26 4l-5-3.25M26 4l-5 3.25" stroke="currentColor" stroke-width="1" stroke-linecap="square" />
+                </svg>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </>
     )}
   </main>
 </AppLayout>
 
 <style>
-  .tabs {
-    max-width: var(--container-editorial);
-    margin-inline: auto;
-    padding: var(--space-32) var(--gutter) var(--space-64);
+  .tabs__summary {
     display: flex;
-    flex-direction: column;
-    gap: var(--space-24);
-  }
-  .tabs__bar {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: var(--space-16);
-    padding-block-end: var(--space-24);
-    border-bottom: 1px solid var(--border-subtle);
-  }
-  .tabs__eyebrow {
-    font-size: var(--fs-caption);
-    letter-spacing: var(--tracking-label);
-    text-transform: uppercase;
-    color: var(--accent);
-  }
-  .tabs__title {
-    margin-block-start: var(--space-4);
-    font-family: var(--font-display);
-    font-size: var(--fs-display-s);
-    color: var(--text-strong);
-  }
-  .tabs__back {
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-8) var(--space-12);
+    max-width: none;
     font-size: var(--fs-caption);
     letter-spacing: var(--tracking-meta);
     text-transform: uppercase;
     color: var(--text-muted);
   }
-  .tabs__back:hover {
+  .tabs__stat strong {
+    font-weight: 500;
     color: var(--text-strong);
+    font-variant-numeric: tabular-nums;
   }
-  .tabs__empty {
-    padding-block: var(--space-48);
-    text-align: center;
-    color: var(--text-muted);
+  .tabs__amt {
+    color: var(--accent) !important;
   }
-  .tabs__list {
+  .tabs__dot {
+    color: var(--accent-muted);
+  }
+
+  /* --- The ledger --------------------------------------------------------- */
+  /* A plain flex row with EXPLICIT margins — never relying on gap alone, so the
+     columns can't collapse into each other if the layout is ever overridden. */
+  .ledger {
     display: flex;
     flex-direction: column;
+    border-top: 1px solid var(--border-subtle);
   }
-  .tabrow__link {
+  .ledger__link {
     display: flex;
     align-items: baseline;
-    gap: var(--space-16);
-    padding-block: var(--space-16);
+    flex-wrap: wrap;
+    padding: var(--space-32) var(--space-24);
     border-bottom: 1px solid var(--border-subtle);
     color: var(--text);
+    transition: background-color 0.3s var(--ease-out), box-shadow 0.3s var(--ease-out);
   }
-  .tabrow__link:hover {
-    color: var(--text-strong);
+  .ledger__link:hover {
+    background: color-mix(in srgb, var(--accent) 5%, transparent);
+    box-shadow: inset 2px 0 0 var(--accent);
   }
-  .tabrow__table {
+  .ledger__table {
     flex: 0 0 auto;
+    margin-inline-end: var(--space-32);
     font-family: var(--font-display);
-    font-size: var(--fs-heading-s);
+    font-size: var(--fs-heading-l);
+    line-height: 1;
     color: var(--text-strong);
+    font-variant-numeric: tabular-nums;
   }
-  .tabrow__meta {
+  .ledger__word {
+    margin-inline-end: var(--space-12);
+    font-family: var(--font-ui);
+    font-size: var(--fs-label);
+    font-weight: 500;
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .ledger__meta {
     flex: 1 1 auto;
     font-size: var(--fs-caption);
     color: var(--text-muted);
-  }
-  .tabrow__total {
-    flex: 0 0 auto;
     font-variant-numeric: tabular-nums;
+  }
+  .ledger__total {
+    flex: 0 0 auto;
+    margin-inline-start: var(--space-24);
+    font-family: var(--font-display);
+    font-size: var(--fs-heading-m);
     color: var(--accent);
+    font-variant-numeric: tabular-nums;
+    text-align: end;
+  }
+  .ledger__go {
+    flex: 0 0 auto;
+    align-self: center;
+    margin-inline-start: var(--space-16);
+    color: var(--text-muted);
+    transition: transform 0.3s var(--ease-out), color 0.3s var(--ease-out);
+  }
+  .ledger__link:hover .ledger__go {
+    color: var(--accent);
+    transform: translateX(4px);
+  }
+
+  @media (max-width: 34rem) {
+    .ledger__meta {
+      flex-basis: 100%;
+      order: 3;
+      margin-block-start: var(--space-8);
+    }
+    .ledger__total {
+      margin-inline-start: auto;
+    }
+    .ledger__go {
+      display: none;
+    }
   }
 </style>

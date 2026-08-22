@@ -67,6 +67,48 @@ export async function getTrackedOrder(code: string): Promise<TrackedOrder | null
   };
 }
 
+export interface SessionRound {
+  code: string;
+  state: CustomerOrderState;
+  created_at: string;
+  subtotal: number;
+  items: TrackedLine[];
+}
+
+/**
+ * Every round on a tab, newest first — the customer's history for their current
+ * table visit. Read by tab id, which the caller only holds while the tab is open
+ * (the session cookie's token resolves to an open tab); once a server closes the
+ * tab the caller can no longer reach this, so the history disappears for the
+ * guest while the records stay intact for the staff bill.
+ */
+export async function getSessionOrders(tabId: string): Promise<SessionRound[]> {
+  const supabase = supabaseAdmin();
+  const { data, error } = await supabase
+    .from("orders")
+    .select(
+      "code, status, subtotal, created_at, order_items ( name_snapshot, price_snapshot, qty )",
+    )
+    .eq("tab_id", tabId)
+    .order("created_at", { ascending: false });
+
+  if (error || !data) return [];
+
+  return data.map((o) => ({
+    code: o.code as string,
+    state: toCustomerState(o.status as string),
+    created_at: o.created_at as string,
+    subtotal: Number(o.subtotal),
+    items: (o.order_items ?? []).map(
+      (i: { name_snapshot: string; price_snapshot: number; qty: number }) => ({
+        name: i.name_snapshot,
+        qty: i.qty,
+        price: Number(i.price_snapshot),
+      }),
+    ),
+  }));
+}
+
 /** Just the live state — for the polling endpoint. null if unknown code. */
 export async function getOrderState(code: string): Promise<CustomerOrderState | null> {
   const supabase = supabaseAdmin();

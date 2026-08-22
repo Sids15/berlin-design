@@ -39,8 +39,12 @@ const OK_COPY: Record<string, string> = {
       </div>
     </header>
 
-    {ok && <p class="flash flash--ok" role="status">{OK_COPY[ok] ?? "Done."}</p>}
-    {err && <p class="flash flash--err" role="alert">{err}</p>}
+    {(ok || err) && (
+      <div class="toaster" aria-live="polite">
+        {ok && <p class="toast toast--ok" data-toast data-ttl="3200">{OK_COPY[ok] ?? "Done."}</p>}
+        {err && <p class="toast toast--err" role="alert" data-toast data-ttl="6000">{err}</p>}
+      </div>
+    )}
 
     {menu.length === 0 ? (
       <p class="admin__empty">No categories yet. Category management is coming next.</p>
@@ -106,6 +110,21 @@ const OK_COPY: Record<string, string> = {
   </main>
 </AppLayout>
 
+<script>
+  // Auto-dismiss each toast after its TTL, then clean the ?ok/?err from the URL
+  // so a refresh doesn't replay the message.
+  for (const el of document.querySelectorAll<HTMLElement>("[data-toast]")) {
+    const ttl = Number(el.dataset.ttl) || 3200;
+    window.setTimeout(() => {
+      el.classList.add("toast--hide");
+      el.addEventListener("animationend", () => el.remove(), { once: true });
+    }, ttl);
+  }
+  if (location.search) {
+    history.replaceState(null, "", location.pathname);
+  }
+</script>
+
 <style>
   .admin {
     max-width: var(--container-editorial);
@@ -161,19 +180,46 @@ const OK_COPY: Record<string, string> = {
   .admin__add:hover {
     background: color-mix(in srgb, var(--accent) 12%, transparent);
   }
-  .flash {
-    padding: var(--space-12) var(--space-16);
+  /* Toast — rises from the bottom, then dismisses itself. */
+  .toaster {
+    position: fixed;
+    inset-block-end: calc(var(--space-32) + env(safe-area-inset-bottom, 0px));
+    inset-inline: 0;
+    z-index: var(--z-overlay, 200);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-8);
+    padding-inline: var(--gutter);
+    pointer-events: none;
+  }
+  .toast {
+    pointer-events: auto;
+    max-width: min(32rem, 92vw);
+    padding: var(--space-16) var(--space-24);
     font-size: var(--fs-caption);
-  }
-  .flash--ok {
-    border: 1px solid var(--accent);
-    background: color-mix(in srgb, var(--accent) 12%, transparent);
     color: var(--text-strong);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
+    border-inline-start: 2px solid var(--accent);
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.55);
+    animation: toast-in 0.5s var(--ease-out) both;
   }
-  .flash--err {
-    border: 1px solid var(--color-berlin-red);
-    background: color-mix(in srgb, var(--color-berlin-red) 14%, transparent);
-    color: var(--text-strong);
+  .toast--ok {
+    border-inline-start-color: #4c8b4a;
+  }
+  .toast--err {
+    border-inline-start-color: var(--color-berlin-red);
+  }
+  .toast--hide {
+    animation: toast-out 0.4s var(--ease-out) forwards;
+  }
+  @keyframes toast-in {
+    from { opacity: 0; transform: translateY(18px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes toast-out {
+    to { opacity: 0; transform: translateY(18px); }
   }
   .admin__empty {
     padding-block: var(--space-48);

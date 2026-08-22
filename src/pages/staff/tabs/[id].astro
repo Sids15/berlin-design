@@ -2,13 +2,16 @@
 /**
  * Collective bill (Feature: billing) for one tab — every non-cancelled round's
  * items merged, with GST + service charge. A server can Close the tab (mark
- * paid) and Print. Behind the auth middleware; billing is manager/server. On
- * screen it's a card on the dark app; @media print switches to black-on-white.
+ * paid), Move it to another table, Merge another table's tab into it, and Print.
+ * Behind the auth middleware; billing is manager/server. On screen the bill is a
+ * Berlin-tailored thermal receipt on the dark app; @media print goes black-on-white.
  */
 import AppLayout from "../../../layouts/AppLayout.astro";
 import { getTabBill } from "../../../lib/orders/tabs";
 import { formatINR } from "../../../lib/money";
 import { SERVICE_RATE, GST_RATE } from "../../../lib/billing";
+import { contact } from "../../../data/site";
+import "../../../styles/staff.css";
 
 export const prerender = false;
 
@@ -24,9 +27,29 @@ if (!bill) Astro.response.status = 404;
 const params = Astro.url.searchParams;
 const justClosed = params.get("closed") === "1";
 const justMoved = params.get("moved") === "1";
+const justMerged = params.get("merged") === "1";
 const err = params.get("err");
 
 const pct = (r: number) => `${Math.round(r * 100)}%`;
+
+// A stable, human-readable bill number derived from the tab id.
+const billNo = bill
+  ? (parseInt(bill.id.replace(/-/g, "").slice(0, 8), 16) % 100000).toString().padStart(5, "0")
+  : "";
+const servedBy = profile!.name?.trim() || profile!.role;
+
+function stamp(iso: string): { date: string; time: string } {
+  try {
+    const d = new Date(iso);
+    return {
+      date: d.toLocaleDateString("en-IN", { day: "2-digit", month: "2-digit", year: "2-digit" }),
+      time: d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }),
+    };
+  } catch {
+    return { date: "", time: "" };
+  }
+}
+const when = bill ? stamp(bill.closed_at ?? bill.opened_at) : { date: "", time: "" };
 ---
 
 <AppLayout title={bill ? `Bill · Table ${bill.table_label} — Berlin` : "Tab not found — Berlin"}>
@@ -35,61 +58,103 @@ const pct = (r: number) => `${Math.round(r * 100)}%`;
       <p class="billwrap__missing">That tab doesn't exist.</p>
     ) : (
       <>
-        <div class="actions no-print">
-          <a class="actions__back" href="/staff/tabs">← Open tabs</a>
-          <div class="actions__right">
+        <div class="billbar no-print st-rise">
+          <a class="st-back" href="/staff/tabs"><span aria-hidden="true">←</span> Open tabs</a>
+          <div class="billbar__ops">
             {bill.status === "open" && (
               <form method="post" action={`/api/staff/tabs/${bill.id}/close`}>
-                <button type="submit" class="actions__close">Close tab (paid)</button>
+                <button type="submit" class="st-btn st-btn--ghost billbar__btn">Close tab · paid</button>
               </form>
             )}
-            <button id="print-btn" type="button" class="actions__print">Print bill</button>
+            <button id="print-btn" type="button" class="st-btn st-btn--primary billbar__btn">
+              <span>Print bill</span>
+              <svg class="st-btn__arrow" width="30" height="8" viewBox="0 0 30 8" fill="none" aria-hidden="true">
+                <path d="M0 4h28M28 4l-5-3.25M28 4l-5 3.25" stroke="currentColor" stroke-width="1" stroke-linecap="square" />
+              </svg>
+            </button>
           </div>
         </div>
 
         {bill.status === "open" && (
-          <form class="move no-print" method="post" action={`/api/staff/tabs/${bill.id}/move`}>
-            <label class="move__label" for="move-to">Move this tab to table</label>
-            <div class="move__row">
-              <input class="move__input" id="move-to" name="to" placeholder="e.g. 8" autocomplete="off" />
-              <button class="move__go" type="submit">Move</button>
-            </div>
-          </form>
+          <div class="ops no-print st-rise-2">
+            <form class="ops__form" method="post" action={`/api/staff/tabs/${bill.id}/move`}>
+              <span class="ops__label">Move this tab to another table</span>
+              <div class="ops__row">
+                <label class="st-field ops__field">
+                  <input class="st-field__input" name="to" placeholder="e.g. 8" autocomplete="off" aria-label="Move to table" />
+                </label>
+                <button class="st-btn st-btn--ghost ops__go" type="submit">Move</button>
+              </div>
+            </form>
+            <form class="ops__form" method="post" action={`/api/staff/tabs/${bill.id}/merge`}>
+              <span class="ops__label">Merge another table into this bill</span>
+              <div class="ops__row">
+                <label class="st-field ops__field">
+                  <input class="st-field__input" name="from" placeholder="e.g. 6" autocomplete="off" aria-label="Merge from table" />
+                </label>
+                <button class="st-btn st-btn--ghost ops__go" type="submit">Merge</button>
+              </div>
+            </form>
+          </div>
         )}
 
-        {justClosed && <p class="flash no-print" role="status">Tab closed — marked paid.</p>}
-        {justMoved && <p class="flash no-print" role="status">Tab moved to Table {bill.table_label}.</p>}
-        {err && <p class="flash flash--err no-print" role="alert">{err}</p>}
+        {justClosed && <p class="st-alert st-alert--ok no-print" role="status">Tab closed — marked paid.</p>}
+        {justMoved && <p class="st-alert no-print" role="status">Tab moved to Table {bill.table_label}.</p>}
+        {justMerged && <p class="st-alert no-print" role="status">Tables merged — the rounds now sit on this bill.</p>}
+        {err && <p class="st-alert st-alert--error no-print" role="alert">{err}</p>}
 
-        <article class="bill">
-          <header class="bill__head">
-            <p class="bill__brand">BERLIN · Haus de Gourmet</p>
-            <p class="bill__kind">Bill</p>
-            <p class="bill__table">Table {bill.table_label}</p>
-            {bill.status === "closed" && <p class="bill__paid">PAID</p>}
-          </header>
+        <div class="receipt-wrap st-rise-2">
+          <div class="receipt__perf receipt__perf--top" aria-hidden="true"></div>
+          <article class="receipt">
+            <header class="receipt__head">
+              <p class="receipt__brand">Berlin</p>
+              <p class="receipt__subbrand">Haus de Gourmet</p>
+              <p class="receipt__addr">{contact.address.line1} · {contact.address.line2}</p>
+              <p class="receipt__doc">Tax Invoice</p>
+            </header>
 
-          <ul class="bill__lines">
-            {bill.lines.map((line) => (
-              <li class="bill__line">
-                <span class="bill__qty">{line.qty}×</span>
-                <span class="bill__name">{line.name}</span>
-                <span class="bill__amount">{formatINR(line.price * line.qty)}</span>
-              </li>
-            ))}
-          </ul>
+            <dl class="receipt__meta">
+              <div><dt>Date</dt><dd>{when.date} · {when.time}</dd></div>
+              <div><dt>Bill No.</dt><dd>{billNo}</dd></div>
+              <div><dt>Table</dt><dd>{bill.table_label}</dd></div>
+              <div><dt>Served by</dt><dd>{servedBy}</dd></div>
+            </dl>
 
-          <dl class="bill__totals">
-            <div><dt>Subtotal</dt><dd>{formatINR(bill.totals.subtotal)}</dd></div>
-            <div><dt>Service charge ({pct(SERVICE_RATE)})</dt><dd>{formatINR(bill.totals.service)}</dd></div>
-            <div><dt>GST ({pct(GST_RATE)})</dt><dd>{formatINR(bill.totals.gst)}</dd></div>
-            <div class="bill__grand"><dt>Total</dt><dd>{formatINR(bill.totals.total)}</dd></div>
-          </dl>
+            <div class="receipt__cols" aria-hidden="true">
+              <span>Qty</span>
+              <span>Item</span>
+              <span>Rate</span>
+              <span>Amount</span>
+            </div>
 
-          <p class="bill__foot">
-            {bill.round_count} {bill.round_count === 1 ? "round" : "rounds"} · Thank you
-          </p>
-        </article>
+            <ul class="receipt__lines">
+              {bill.lines.map((line) => (
+                <li class="receipt__line">
+                  <span class="receipt__q">{line.qty}</span>
+                  <span class="receipt__n">{line.name}</span>
+                  <span class="receipt__rate">{formatINR(line.price)}</span>
+                  <span class="receipt__amt">{formatINR(line.price * line.qty)}</span>
+                </li>
+              ))}
+            </ul>
+
+            <dl class="receipt__totals">
+              <div><dt>Sub total</dt><dd>{formatINR(bill.totals.subtotal)}</dd></div>
+              <div><dt>Service charge ({pct(SERVICE_RATE)})</dt><dd>{formatINR(bill.totals.service)}</dd></div>
+              <div><dt>GST ({pct(GST_RATE)})</dt><dd>{formatINR(bill.totals.gst)}</dd></div>
+              <div class="receipt__grand"><dt>Total</dt><dd>{formatINR(bill.totals.total)}</dd></div>
+            </dl>
+
+            <footer class="receipt__foot">
+              {bill.status === "closed" && <p class="receipt__paid">Paid</p>}
+              <p class="receipt__fssai">FSSAI · 115160&#8203;04000575</p>
+              <p class="receipt__thanks">
+                {bill.round_count} {bill.round_count === 1 ? "round" : "rounds"} · Thank you · Visit again
+              </p>
+            </footer>
+          </article>
+          <div class="receipt__perf receipt__perf--bottom" aria-hidden="true"></div>
+        </div>
       </>
     )}
   </main>
@@ -101,238 +166,319 @@ const pct = (r: number) => `${Math.round(r * 100)}%`;
 
 <style>
   .billwrap {
-    max-width: 26rem;
+    max-width: 30rem;
     margin-inline: auto;
-    padding: var(--space-24) var(--gutter) var(--space-64);
+    padding: var(--space-40) var(--gutter) var(--space-96);
     display: flex;
     flex-direction: column;
-    gap: var(--space-16);
+    gap: var(--space-24);
   }
   .billwrap__missing {
     padding-block: var(--space-64);
     text-align: center;
     color: var(--text-muted);
   }
-  .actions {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-16);
-  }
-  .actions__right {
-    display: flex;
-    align-items: center;
-    gap: var(--space-12);
-  }
-  .actions__back {
-    font-size: var(--fs-caption);
-    letter-spacing: var(--tracking-meta);
-    text-transform: uppercase;
-    color: var(--text-muted);
-  }
-  .actions__close {
-    min-height: 2.5rem;
-    padding-inline: var(--space-16);
-    background: none;
-    color: var(--text-muted);
-    border: 1px solid var(--border-subtle);
-    font: inherit;
-    text-transform: uppercase;
-    letter-spacing: var(--tracking-nav);
-    cursor: pointer;
-  }
-  .actions__close:hover {
-    color: var(--text-strong);
-    border-color: var(--accent);
-  }
-  .actions__print {
-    min-height: 2.5rem;
-    padding-inline: var(--space-24);
-    background: var(--accent);
-    color: var(--color-warm-black);
-    border: none;
-    font: inherit;
-    text-transform: uppercase;
-    letter-spacing: var(--tracking-nav);
-    cursor: pointer;
-  }
-  .move {
+
+  /* --- Top bar + table operations ----------------------------------------- */
+  .billbar {
     display: flex;
     flex-direction: column;
-    gap: var(--space-8);
+    align-items: stretch;
+    gap: var(--space-16);
   }
-  .move__label {
-    font-size: var(--fs-caption);
-    letter-spacing: var(--tracking-meta);
-    text-transform: uppercase;
-    color: var(--text-muted);
+  .billbar .st-back {
+    align-self: flex-start;
   }
-  .move__row {
-    display: flex;
+  .billbar__ops {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: var(--space-12);
   }
-  .move__input {
-    flex: 1 1 auto;
-    padding: var(--space-12) var(--space-16);
-    background: var(--bg-elevated);
-    border: 1px solid var(--border-subtle);
-    color: var(--text-strong);
-    font: inherit;
-  }
-  .move__input:focus {
-    outline: none;
-    border-color: var(--accent);
-  }
-  .move__go {
-    flex: 0 0 auto;
-    padding-inline: var(--space-24);
-    background: none;
-    color: var(--text-muted);
-    border: 1px solid var(--border-subtle);
-    font: inherit;
-    text-transform: uppercase;
-    letter-spacing: var(--tracking-nav);
-    cursor: pointer;
-  }
-  .move__go:hover {
-    color: var(--text-strong);
-    border-color: var(--accent);
-  }
-  .flash {
-    padding: var(--space-12) var(--space-16);
-    font-size: var(--fs-caption);
-    border: 1px solid var(--accent);
-    background: color-mix(in srgb, var(--accent) 12%, transparent);
-    color: var(--text-strong);
-  }
-  .flash--err {
-    border-color: var(--color-berlin-red);
-    background: color-mix(in srgb, var(--color-berlin-red) 14%, transparent);
+  .billbar__btn {
+    width: 100%;
+    min-width: 0;
+    min-height: 2.75rem;
+    padding-inline: var(--space-16);
+    font-size: var(--fs-label);
   }
 
-  .bill {
+  .ops {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-24);
+    padding: var(--space-24);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
+  }
+  .ops__form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-12);
+  }
+  .ops__label {
+    font-size: var(--fs-label);
+    font-weight: 500;
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .ops__row {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--space-12);
+  }
+  .ops__field {
+    flex: 1 1 auto;
+  }
+  .ops__go {
+    flex: 0 0 auto;
+    min-height: 2.75rem;
+    padding-inline: var(--space-20, 1.25rem);
+    font-size: var(--fs-label);
+  }
+
+  /* --- The receipt — a Berlin-tailored thermal slip ----------------------- */
+  .receipt-wrap {
+    align-self: center;
+    width: 100%;
+    max-width: 23rem;
+    filter: drop-shadow(0 24px 44px rgba(0, 0, 0, 0.4));
+  }
+  .receipt {
     background: var(--color-ivory);
     color: var(--color-warm-black);
-    padding: var(--space-32) var(--space-24);
+    padding: var(--space-32) var(--space-24) var(--space-24);
     font-family: var(--font-ui);
   }
-  .bill__head {
+  /* Torn thermal edges, top and bottom. */
+  .receipt__perf {
+    height: 0.7rem;
+    background: var(--color-ivory);
+  }
+  .receipt__perf--top {
+    -webkit-mask: radial-gradient(0.4rem at 50% 0%, transparent 96%, #000) 0 0 / 0.8rem 0.7rem repeat-x;
+    mask: radial-gradient(0.4rem at 50% 0%, transparent 96%, #000) 0 0 / 0.8rem 0.7rem repeat-x;
+  }
+  .receipt__perf--bottom {
+    -webkit-mask: radial-gradient(0.4rem at 50% 100%, transparent 96%, #000) 0 100% / 0.8rem 0.7rem repeat-x;
+    mask: radial-gradient(0.4rem at 50% 100%, transparent 96%, #000) 0 100% / 0.8rem 0.7rem repeat-x;
+  }
+
+  .receipt__head {
     text-align: center;
     padding-block-end: var(--space-16);
     border-bottom: 1px dashed #9a9184;
   }
-  .bill__brand {
-    font-size: var(--fs-caption);
-    letter-spacing: var(--tracking-label);
-    text-transform: uppercase;
-  }
-  .bill__kind {
-    margin-block-start: var(--space-4);
+  .receipt__brand {
     font-family: var(--font-display);
     font-size: var(--fs-heading-m);
-  }
-  .bill__table {
-    margin-block-start: var(--space-4);
-    font-size: var(--fs-caption);
+    letter-spacing: 0.08em;
     text-transform: uppercase;
-    letter-spacing: var(--tracking-meta);
+    color: var(--color-warm-black);
+  }
+  .receipt__subbrand {
+    margin-block-start: var(--space-4);
+    font-size: var(--fs-label);
+    font-weight: 500;
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
     color: #5b544a;
   }
-  .bill__paid {
-    margin-block-start: var(--space-8);
-    font-family: var(--font-display);
-    font-size: var(--fs-heading-s);
-    letter-spacing: 0.2em;
-    color: #4c8b4a;
+  .receipt__addr {
+    margin: var(--space-12) auto 0;
+    max-width: 16rem;
+    font-size: var(--fs-caption);
+    line-height: 1.5;
+    color: #5b544a;
   }
-  .bill__lines {
+  .receipt__doc {
+    margin-block-start: var(--space-12);
+    font-size: var(--fs-label);
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--color-champagne-muted);
+  }
+
+  .receipt__meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-8) var(--space-16);
+    padding-block: var(--space-16);
+    border-bottom: 1px dashed #9a9184;
+  }
+  .receipt__meta div {
     display: flex;
     flex-direction: column;
-    padding-block: var(--space-8);
+    gap: 0.1rem;
   }
-  .bill__line {
+  .receipt__meta dt {
+    font-size: 0.6rem;
+    font-weight: 500;
+    letter-spacing: var(--tracking-meta);
+    text-transform: uppercase;
+    color: #8a8172;
+  }
+  .receipt__meta dd {
+    font-size: var(--fs-caption);
+    color: var(--color-warm-black);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .receipt__cols {
+    display: grid;
+    grid-template-columns: 2.2rem 1fr auto auto;
+    gap: var(--space-12);
+    padding-block: var(--space-12) var(--space-8);
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: var(--tracking-meta);
+    text-transform: uppercase;
+    color: #8a8172;
+  }
+  .receipt__cols span:nth-child(3),
+  .receipt__cols span:nth-child(4) {
+    text-align: end;
+    min-width: 3.5rem;
+  }
+  .receipt__lines {
     display: flex;
+    flex-direction: column;
+  }
+  .receipt__line {
+    display: grid;
+    grid-template-columns: 2.2rem 1fr auto auto;
+    gap: var(--space-12);
     align-items: baseline;
-    gap: var(--space-16);
-    padding-block: var(--space-12);
+    padding-block: var(--space-8);
     border-bottom: 1px solid #e0d8c8;
+    font-size: var(--fs-body);
   }
-  .bill__qty {
-    flex: 0 0 auto;
+  .receipt__q {
     font-variant-numeric: tabular-nums;
+    color: #5b544a;
   }
-  .bill__name {
-    flex: 1 1 auto;
+  .receipt__n {
     min-width: 0;
+    color: var(--color-warm-black);
   }
-  .bill__amount {
-    flex: 0 0 auto;
+  .receipt__rate,
+  .receipt__amt {
+    text-align: end;
+    min-width: 3.5rem;
     font-variant-numeric: tabular-nums;
   }
-  .bill__totals {
-    padding-block: var(--space-16);
+  .receipt__rate {
+    color: #5b544a;
+  }
+  .receipt__amt {
+    color: var(--color-warm-black);
+  }
+
+  .receipt__totals {
     display: flex;
     flex-direction: column;
     gap: var(--space-8);
+    padding-block: var(--space-16);
     border-top: 1px dashed #9a9184;
   }
-  .bill__totals > div {
+  .receipt__totals > div {
     display: flex;
     justify-content: space-between;
-    font-size: var(--fs-body);
+    gap: var(--space-16);
+    font-size: var(--fs-caption);
   }
-  .bill__totals dt {
+  .receipt__totals dt {
     color: #5b544a;
   }
-  .bill__totals dd {
+  .receipt__totals dd {
     font-variant-numeric: tabular-nums;
+    color: var(--color-warm-black);
   }
-  .bill__grand {
+  .receipt__grand {
     margin-block-start: var(--space-8);
     padding-block-start: var(--space-12);
     border-top: 1px solid #9a9184;
+    align-items: baseline;
   }
-  .bill__grand dt,
-  .bill__grand dd {
+  .receipt__grand dt {
     font-family: var(--font-display);
     font-size: var(--fs-heading-s);
-    color: var(--color-warm-black);
+    color: var(--color-warm-black) !important;
   }
-  .bill__foot {
+  .receipt__grand dd {
+    font-family: var(--font-display);
+    font-size: var(--fs-heading-s);
+  }
+
+  .receipt__foot {
     text-align: center;
     padding-block-start: var(--space-16);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+  }
+  .receipt__paid {
+    align-self: center;
+    padding: var(--space-4) var(--space-16);
+    font-family: var(--font-display);
+    font-size: var(--fs-heading-s);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #4c8b4a;
+    border: 1px solid #4c8b4a;
+  }
+  .receipt__fssai {
+    font-size: 0.6rem;
+    letter-spacing: var(--tracking-meta);
+    text-transform: uppercase;
+    color: #8a8172;
+    font-variant-numeric: tabular-nums;
+  }
+  .receipt__thanks {
     font-size: var(--fs-caption);
     color: #5b544a;
   }
 
+  @media (max-width: 32rem) {
+    .ops {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Print the receipt exactly as shown, on a receipt-width roll — not stretched
+     across an A4 sheet. The 80mm page + auto height matches a thermal printer. */
   @media print {
+    @page {
+      size: 80mm auto;
+      margin: 3mm;
+    }
+    :global(html),
     :global(body) {
-      background: #fff !important;
+      background: var(--color-ivory) !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
     }
     .billwrap {
       max-width: none;
       padding: 0;
+      gap: 0;
     }
     .no-print {
       display: none !important;
     }
-    .bill {
-      background: #fff;
-      color: #000;
-      padding: 0;
+    .receipt-wrap {
+      max-width: none;
+      width: 100%;
+      align-self: stretch;
+      filter: none;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
     }
-    .bill__head,
-    .bill__totals,
-    .bill__grand {
-      border-color: #000;
-    }
-    .bill__line {
-      border-color: #ccc;
-    }
-    .bill__table,
-    .bill__totals dt,
-    .bill__foot {
-      color: #333;
+    .receipt {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      padding: var(--space-16) var(--space-12);
     }
   }
 </style>

@@ -1,0 +1,74 @@
+---
+/**
+ * StationMasthead — the shared header across the back-of-house area (order desk,
+ * order builder, tabs). An uppercase eyebrow over a champagne rule, then the
+ * page title in Bodoni; the right side is an `actions` slot so each station can
+ * carry its own controls (identity + nav, or a return link) while the masthead
+ * itself stays identical everywhere.
+ */
+interface Props {
+  eyebrow?: string;
+  title: string;
+}
+const { eyebrow = "Berlin · Back of house", title } = Astro.props;
+---
+
+<header class="masthead st-rise">
+  <div class="masthead__lead">
+    <p class="masthead__eyebrow">{eyebrow}</p>
+    <h1 class="masthead__title">{title}</h1>
+  </div>
+  <div class="masthead__actions">
+    <slot name="actions" />
+  </div>
+</header>
+
+<style>
+  .masthead {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--space-24);
+    padding-block-end: var(--space-24);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .masthead__eyebrow {
+    font-family: var(--font-ui);
+    font-size: var(--fs-caption);
+    font-weight: 500;
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .masthead__eyebrow::after {
+    content: "";
+    display: block;
+    width: 2.75rem;
+    height: 1px;
+    margin-block-start: var(--space-16);
+    background: var(--accent-muted);
+  }
+  .masthead__title {
+    margin-block-start: var(--space-20, 1.25rem);
+    font-family: var(--font-display);
+    font-size: var(--fs-display-s);
+    line-height: var(--lh-display);
+    letter-spacing: var(--tracking-display);
+    color: var(--text-strong);
+  }
+  .masthead__actions {
+    flex: 0 0 auto;
+    padding-block-end: var(--space-8);
+  }
+
+  @media (max-width: 40rem) {
+    .masthead {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--space-20, 1.25rem);
+    }
+    .masthead__actions {
+      padding-block-end: 0;
+    }
+  }
+</style>

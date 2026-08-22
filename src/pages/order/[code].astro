@@ -48,19 +48,24 @@ const qrSvg = order
         <header class="track__head">
           <p class="track__eyebrow">Berlin · Haus de Gourmet</p>
           <h1 class="track__title">Your order</h1>
+          <p class="track__sub">Keep this ticket until your order reaches the table.</p>
+          <div class="track__rule" aria-hidden="true"><span class="track__mark">✦</span></div>
           {order.table_label && <p class="track__table">Table {order.table_label}</p>}
         </header>
 
         <OrderStatus client:load code={order.code} initialState={order.state} />
 
-        <section class="ticket" aria-label="Your order code">
-          <div class="ticket__qr" set:html={qrSvg} />
-          <div class="ticket__meta">
-            <p class="ticket__label">Order code</p>
-            <p class="ticket__code">{order.code}</p>
-            <p class="ticket__hint">Show this to a server to confirm your order.</p>
-          </div>
-        </section>
+        <div class="pass-wrap">
+          <section class="pass" aria-label="Your order code">
+            <div class="pass__qr" set:html={qrSvg} />
+            <div class="pass__meta">
+              <p class="pass__label">Order code</p>
+              <p class="pass__code">{order.code}</p>
+              <p class="pass__hint">Show this to a server to confirm your order.</p>
+            </div>
+          </section>
+          <div class="pass__perf" aria-hidden="true"></div>
+        </div>
 
         <section class="summary" aria-label="Order summary">
           <h2 class="summary__title">Summary</h2>
@@ -77,15 +82,26 @@ const qrSvg = order
             <span>Subtotal</span>
             <span>{formatINR(order.subtotal)}</span>
           </div>
-          {order.notes && <p class="summary__notes">Note: {order.notes}</p>}
+          {order.notes && <p class="summary__notes">Note — {order.notes}</p>}
         </section>
 
-        <a
-          class="track__link"
-          href={order.table_label ? `/menu/${encodeURIComponent(order.table_label)}` : "/menu"}
-        >
-          Order something more
-        </a>
+        <nav class="track__links" aria-label="More">
+          <a class="track__link" href="/orders">
+            <span>See all your orders</span>
+            <svg width="30" height="8" viewBox="0 0 30 8" fill="none" aria-hidden="true">
+              <path d="M0 4h28M28 4l-5-3.25M28 4l-5 3.25" stroke="currentColor" stroke-width="1" stroke-linecap="square" />
+            </svg>
+          </a>
+          <a
+            class="track__link"
+            href={order.table_label ? `/menu/${encodeURIComponent(order.table_label)}` : "/menu"}
+          >
+            <span>Order something more</span>
+            <svg width="30" height="8" viewBox="0 0 30 8" fill="none" aria-hidden="true">
+              <path d="M0 4h28M28 4l-5-3.25M28 4l-5 3.25" stroke="currentColor" stroke-width="1" stroke-linecap="square" />
+            </svg>
+          </a>
+        </nav>
       </main>
     )
   }
@@ -93,9 +109,9 @@ const qrSvg = order
 
 <style>
   .track {
-    max-width: var(--container-editorial);
+    max-width: 37rem;
     margin-inline: auto;
-    padding: var(--space-40) var(--gutter) var(--space-80);
+    padding: clamp(var(--space-40), 8vw, var(--space-80)) var(--gutter) var(--space-80);
     display: flex;
     flex-direction: column;
     gap: var(--space-32);
@@ -107,25 +123,65 @@ const qrSvg = order
   }
   .track__head {
     text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
   .track__eyebrow {
+    font-family: var(--font-ui);
     font-size: var(--fs-caption);
+    font-weight: 500;
     letter-spacing: var(--tracking-label);
     text-transform: uppercase;
     color: var(--accent);
   }
   .track__title {
-    margin-block-start: var(--space-8);
+    margin-block-start: var(--space-16);
     font-family: var(--font-display);
-    font-size: var(--fs-display-s);
+    font-size: var(--fs-display-m);
+    line-height: 0.95;
+    letter-spacing: var(--tracking-display);
     color: var(--text-strong);
   }
-  .track__table {
-    margin-block-start: var(--space-8);
-    font-size: var(--fs-caption);
-    letter-spacing: var(--tracking-meta);
-    text-transform: uppercase;
+  .track__sub {
+    margin: var(--space-16) auto 0;
+    max-width: 24rem;
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: var(--fs-body-l);
+    line-height: 1.4;
     color: var(--text-muted);
+  }
+  /* A centred fleuron flanked by hairlines — the menu's carte device. */
+  .track__rule {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: var(--space-16);
+    width: 12rem;
+    margin: var(--space-32) auto 0;
+    color: var(--accent);
+  }
+  .track__rule::before,
+  .track__rule::after {
+    content: "";
+    height: 1px;
+    background: var(--border-strong);
+  }
+  .track__mark {
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    transform: translateY(-0.05em);
+  }
+  .track__table {
+    margin-block-start: var(--space-24);
+    padding: var(--space-8) var(--space-16);
+    font-size: var(--fs-caption);
+    font-weight: 500;
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--accent);
+    border: 1px solid var(--accent-muted);
   }
   .track__note {
     margin: 0 auto;
@@ -139,6 +195,7 @@ const qrSvg = order
     gap: var(--space-16);
     padding: var(--space-24);
     border: 1px solid var(--border-subtle);
+    border-inline-start: 2px solid var(--accent);
     background: var(--bg-elevated);
   }
   .track :global(.status__pulse) {
@@ -184,42 +241,56 @@ const qrSvg = order
     color: var(--text-muted);
   }
 
-  /* --- Ticket (code + QR) ------------------------------------------------- */
-  .ticket {
+  /* --- Pass (code + QR) — an ivory boarding-pass with a torn edge --------- */
+  .pass-wrap {
+    filter: drop-shadow(0 20px 36px rgba(0, 0, 0, 0.35));
+  }
+  .pass {
     display: flex;
     align-items: center;
-    gap: var(--space-24);
-    padding: var(--space-24);
+    gap: var(--space-32);
+    padding: var(--space-32) var(--space-24);
     background: var(--color-ivory);
     color: var(--color-warm-black);
   }
-  .ticket__qr {
+  .pass__qr {
     flex: 0 0 auto;
     width: 8rem;
     height: 8rem;
+    padding: var(--space-8);
+    background: var(--color-ivory);
+    border: 1px solid #cfc5b2;
   }
-  .ticket__qr :global(svg) {
+  .pass__qr :global(svg) {
     width: 100%;
     height: 100%;
     display: block;
   }
-  .ticket__label {
-    font-size: var(--fs-caption);
+  .pass__label {
+    font-size: var(--fs-label);
+    font-weight: 500;
     letter-spacing: var(--tracking-label);
     text-transform: uppercase;
     color: var(--color-champagne-muted);
   }
-  .ticket__code {
-    margin-block-start: var(--space-4);
+  .pass__code {
+    margin-block-start: var(--space-8);
     font-family: var(--font-display);
     font-size: var(--fs-display-s);
-    letter-spacing: 0.08em;
+    line-height: 1;
+    letter-spacing: 0.12em;
     color: var(--color-warm-black);
   }
-  .ticket__hint {
-    margin-block-start: var(--space-8);
+  .pass__hint {
+    margin-block-start: var(--space-12);
     font-size: var(--fs-caption);
     color: #5b544a;
+  }
+  .pass__perf {
+    height: 0.7rem;
+    background: var(--color-ivory);
+    -webkit-mask: radial-gradient(0.4rem at 50% 100%, transparent 96%, #000) 0 100% / 0.8rem 0.7rem repeat-x;
+    mask: radial-gradient(0.4rem at 50% 100%, transparent 96%, #000) 0 100% / 0.8rem 0.7rem repeat-x;
   }
 
   /* --- Summary ------------------------------------------------------------ */
@@ -270,14 +341,35 @@ const qrSvg = order
     color: var(--text-muted);
   }
 
+  .track__links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-16) var(--space-32);
+  }
   .track__link {
     align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-12);
     font-size: var(--fs-caption);
+    font-weight: 500;
     letter-spacing: var(--tracking-nav);
     text-transform: uppercase;
     color: var(--accent);
     border-bottom: 1px solid var(--accent-muted);
     padding-block-end: var(--space-4);
+    transition: color 0.3s var(--ease-out), border-color 0.3s var(--ease-out);
+  }
+  .track__link svg {
+    transition: transform 0.35s var(--ease-out);
+  }
+  .track__link:hover {
+    color: var(--text-strong);
+    border-color: var(--accent);
+  }
+  .track__link:hover svg {
+    transform: translateX(4px);
   }
   .track--missing .track__link {
     align-self: center;
@@ -285,7 +377,7 @@ const qrSvg = order
   }
 
   @media (max-width: 30rem) {
-    .ticket {
+    .pass {
       flex-direction: column;
       text-align: center;
     }

@@ -1,28 +1,32 @@
 /* =============================================================================
-   PendingQueue — live "waiting to confirm" notification on the staff console.
+   PendingQueue — the live "waiting to confirm" rail on the order desk.
+   Styled as a row of small kitchen dockets, matching the desk's pass vocabulary.
+   Consumes design tokens only.
    ========================================================================== */
 
 .pending {
-  border: 1px solid var(--accent);
-  background: color-mix(in srgb, var(--accent) 7%, var(--bg-elevated));
-  padding: var(--space-16) var(--space-24);
+  padding: var(--space-24) var(--space-24) var(--space-24) var(--space-20, 1.25rem);
+  background: color-mix(in srgb, var(--accent) 6%, var(--bg-elevated));
+  border-inline-start: 2px solid var(--accent);
+  animation: st-rise var(--dur-reveal) var(--ease-out) 60ms both;
 }
 .pending--empty {
-  border-color: var(--border-subtle);
-  background: var(--bg-elevated);
+  background: transparent;
+  border-inline-start-color: var(--border-strong);
   color: var(--text-muted);
   font-size: var(--fs-caption);
-  text-align: center;
+  padding-block: var(--space-16);
 }
 
 .pending__head {
   display: flex;
   align-items: center;
   gap: var(--space-12);
-  padding-block-end: var(--space-16);
+  padding-block-end: var(--space-20, 1.25rem);
 }
 .pending__title {
-  font-size: var(--fs-caption);
+  font-size: var(--fs-label);
+  font-weight: 500;
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
   color: var(--accent);
@@ -43,15 +47,15 @@
 .pending__list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
-  gap: var(--space-12);
+  gap: var(--space-16);
 }
 .pcard {
   display: flex;
   flex-direction: column;
-  gap: var(--space-12);
+  gap: var(--space-16);
   padding: var(--space-16);
   background: var(--color-void);
-  border: 1px solid var(--border-subtle);
+  border-top: 2px solid var(--accent-muted);
 }
 .pcard__top {
   display: flex;
@@ -73,15 +77,16 @@
 .pcard__items {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-8);
 }
 .pcard__item {
   display: flex;
-  gap: var(--space-8);
+  gap: var(--space-12);
   font-size: var(--fs-body);
 }
 .pcard__qty {
   flex: 0 0 auto;
+  min-width: 2ch;
   color: var(--accent);
   font-variant-numeric: tabular-nums;
 }
@@ -97,10 +102,12 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-12);
-  padding-block-start: var(--space-12);
-  border-top: 1px solid var(--border-subtle);
+  padding-block-start: var(--space-16);
+  border-top: 1px dashed var(--accent-muted);
 }
 .pcard__total {
+  font-family: var(--font-display);
+  font-size: var(--fs-heading-s);
   font-variant-numeric: tabular-nums;
   color: var(--text-strong);
 }
@@ -113,18 +120,22 @@
   min-height: 2.5rem;
   padding-inline: var(--space-16);
   font: inherit;
-  font-size: var(--fs-caption);
+  font-weight: 600;
+  font-size: var(--fs-label);
   letter-spacing: var(--tracking-nav);
   text-transform: uppercase;
   cursor: pointer;
+  transition: background-color 0.3s var(--ease-out), color 0.3s var(--ease-out),
+    border-color 0.3s var(--ease-out);
 }
 .pcard__confirm {
   background: var(--accent);
   color: var(--color-warm-black);
-  border: none;
+  border: 1px solid var(--accent);
 }
-.pcard__confirm:hover {
-  opacity: 0.9;
+.pcard__confirm:hover:not(:disabled) {
+  background: var(--color-white);
+  border-color: var(--color-white);
 }
 .pcard__confirm:disabled,
 .pcard__cancel:disabled {
@@ -134,9 +145,9 @@
 .pcard__cancel {
   background: none;
   color: var(--text-muted);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--border-strong);
 }
-.pcard__cancel:hover {
+.pcard__cancel:hover:not(:disabled) {
   color: var(--text-strong);
   border-color: var(--color-berlin-red);
 }

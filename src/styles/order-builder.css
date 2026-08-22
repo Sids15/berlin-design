@@ -1,0 +1,379 @@
+/* =============================================================================
+   BERLIN — Haus de Gourmet · Order builder (/staff/new)
+   The manual order form dressed in the CUSTOMER MENU's vocabulary — the same
+   dish rows a guest sees (veg dot, signature mark, italic description, tags),
+   an "Add" button that morphs into the menu's stepper, and a live order bar.
+   No dotted leader: the name sits left, the price right.
+
+   GLOBAL stylesheet (imported by the page) rather than a scoped <style>, so a
+   server-rendered edit can never leave the markup on a stale scope id while
+   these rules target a new one — which collapses the whole layout.
+   Consumes design tokens only.
+   ========================================================================== */
+
+.build__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-48);
+  padding-block-end: var(--space-32);
+}
+
+.build__meta {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: var(--space-32);
+}
+
+/* --- Filter bar (search + category chips + veg chips, from the guest menu) - */
+.build__controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+  padding-block: var(--space-16);
+  border-block: 1px solid var(--border-subtle);
+}
+.build__search {
+  display: block;
+}
+.build__search input {
+  width: min(100%, 24rem);
+  height: 2.75rem;
+  padding-block: var(--space-8);
+  font-family: var(--font-ui);
+  font-size: var(--fs-body);
+  color: var(--text-strong);
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border-strong);
+  border-radius: 0;
+}
+.build__search input::placeholder {
+  color: var(--text-muted);
+  text-transform: none;
+  letter-spacing: 0.03em;
+}
+.build__search input:focus-visible {
+  border-color: var(--accent);
+  outline: none;
+}
+.build__filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-16);
+}
+.build__cats,
+.build__diet {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  padding: var(--space-8) var(--space-16);
+  font-family: var(--font-ui);
+  font-size: var(--fs-caption);
+  font-weight: 500;
+  letter-spacing: var(--tracking-meta);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  cursor: pointer;
+  transition: color 0.25s var(--ease-out), border-color 0.25s var(--ease-out),
+    background-color 0.25s var(--ease-out);
+}
+.chip:hover {
+  color: var(--text-strong);
+}
+.chip[aria-pressed="true"] {
+  color: var(--text-strong);
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+.build__noresults {
+  margin-block: var(--space-64);
+  max-width: none;
+  text-align: center;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: var(--fs-body-l);
+  color: var(--text-muted);
+}
+
+/* --- Category (carte heading) --------------------------------------------- */
+.build__cat {
+  display: flex;
+  flex-direction: column;
+}
+/* Class-level `display` beats the UA hidden rule — restore it for filtering. */
+.build__cat[hidden],
+.dish[hidden] {
+  display: none;
+}
+.build__cathead {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-16);
+  padding-block-end: var(--space-12);
+}
+.build__catname {
+  flex: 0 0 auto;
+  font-family: var(--font-display);
+  font-size: var(--fs-heading-m);
+  color: var(--text-strong);
+}
+.build__catrule {
+  flex: 1 1 auto;
+  height: 1px;
+  background: var(--border-subtle);
+}
+.build__list {
+  display: flex;
+  flex-direction: column;
+}
+
+/* --- Dish row (the customer menu's vocabulary) ---------------------------- */
+.dish {
+  display: flex;
+  align-items: center;
+  gap: var(--space-24);
+  padding-block: var(--space-24);
+  padding-inline: var(--space-12);
+  border-bottom: 1px solid var(--border-subtle);
+  transition: background-color 0.25s var(--ease-out);
+}
+@media (hover: hover) {
+  .dish:hover {
+    background: color-mix(in srgb, var(--accent) 6%, transparent);
+  }
+}
+/* Signature dishes carry a faint candlelight wash and a gold edge. */
+.dish--sig {
+  background: color-mix(in srgb, var(--accent) 4%, transparent);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+@media (hover: hover) {
+  .dish--sig:hover {
+    background: color-mix(in srgb, var(--accent) 9%, transparent);
+  }
+}
+/* Left: name, description, tags. */
+.dish__body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.dish__title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  font-family: var(--font-display);
+  font-size: var(--fs-heading-s);
+  line-height: 1.2;
+  color: var(--text-strong);
+}
+.dish__sig {
+  font-size: 0.7rem;
+  color: var(--accent);
+  transform: translateY(-0.15em);
+}
+/* Right: a tidy stack of price over the Add / stepper control, a stable width
+   so prices line up down the list and Add↔stepper never shifts the layout. */
+.dish__actions {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-12);
+  min-width: 8.75rem;
+}
+.dish__price {
+  font-family: var(--font-display);
+  font-size: var(--fs-body-l);
+  line-height: 1;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.dish__desc {
+  margin-block-start: var(--space-8);
+  max-width: var(--measure);
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: var(--fs-body);
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+/* Signature word + tags, tied together with mid-dots so they never run on. */
+.dish__meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+  margin-block-start: var(--space-12);
+}
+.dish__meta > * + *::before {
+  content: "·";
+  margin-inline-end: var(--space-8);
+  color: var(--text-muted);
+}
+.dish__signword {
+  font-size: var(--fs-label);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.tag {
+  font-size: var(--fs-label);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.dish__add {
+  width: 100%;
+}
+.dish__add [hidden] {
+  display: none;
+}
+
+/* --- Veg marker (Indian convention — fixed meaning, not themed) ------------ */
+.vegdot {
+  position: relative;
+  display: inline-block;
+  width: 0.95rem;
+  height: 0.95rem;
+  flex: 0 0 auto;
+  border: 1.5px solid currentColor;
+}
+.vegdot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: currentColor;
+}
+.vegdot--veg { color: #4c8b4a; }
+.vegdot--non_veg { color: #a33227; }
+.vegdot--egg { color: #b08a3c; }
+
+/* --- Add button — a full-width hairline that fills with candlelight -------- */
+.add {
+  width: 100%;
+  min-height: 2.75rem;
+  padding-inline: var(--space-16);
+  font-size: var(--fs-caption);
+  font-weight: 500;
+  letter-spacing: var(--tracking-nav);
+  text-transform: uppercase;
+  color: var(--accent);
+  border: 1px solid var(--accent-muted);
+  cursor: pointer;
+  transition: background-color 0.25s var(--ease-out), color 0.25s var(--ease-out),
+    border-color 0.25s var(--ease-out), transform 0.15s var(--ease-out);
+}
+.add:hover,
+.add:focus-visible {
+  background: var(--accent);
+  color: var(--color-warm-black);
+  border-color: var(--accent);
+  outline: none;
+}
+.add:active {
+  transform: scale(0.97);
+}
+
+/* --- Stepper — same footprint as the Add button, − and + at the ends ------- */
+.stepper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: 2.75rem;
+  border: 1px solid var(--accent);
+}
+.stepper__btn {
+  flex: 0 0 auto;
+  width: 2.75rem;
+  height: 100%;
+  font-size: var(--fs-body-l);
+  line-height: 1;
+  color: var(--accent);
+  cursor: pointer;
+  transition: background-color 0.2s var(--ease-out), color 0.2s var(--ease-out);
+}
+.stepper__btn:hover {
+  background: var(--accent);
+  color: var(--color-warm-black);
+}
+.stepper__qty {
+  flex: 1 1 auto;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: var(--fs-body-l);
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+
+/* --- Sticky order bar ----------------------------------------------------- */
+.buildbar {
+  position: sticky;
+  inset-block-end: calc(var(--space-16) + env(safe-area-inset-bottom, 0px));
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: var(--space-24);
+  padding: var(--space-12) var(--space-12) var(--space-12) var(--space-24);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+}
+.buildbar__info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+.buildbar__count {
+  font-size: var(--fs-label);
+  font-weight: 500;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.buildbar__total {
+  min-height: 1.6rem;
+  font-family: var(--font-display);
+  font-size: var(--fs-heading-s);
+  color: var(--text-strong);
+  font-variant-numeric: tabular-nums;
+}
+.buildbar__submit {
+  flex: 0 0 auto;
+  margin-inline-start: auto;
+  min-width: 16rem;
+}
+
+@media (max-width: 34rem) {
+  .build__meta {
+    grid-template-columns: 1fr;
+    gap: var(--space-40);
+  }
+  .dish {
+    gap: var(--space-16);
+    padding-inline: 0;
+  }
+  .buildbar {
+    gap: var(--space-12);
+    padding-inline: var(--space-16);
+  }
+  .buildbar__submit {
+    min-width: 0;
+    padding-inline: var(--space-16);
+  }
+}

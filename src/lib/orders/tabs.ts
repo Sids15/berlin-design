@@ -249,3 +249,55 @@ export async function moveTab(
   await supabase.from("orders").update({ table_label: label }).eq("tab_id", tabId);
   return { ok: true };
 }
+
+/**
+ * Merge the open tab at `fromLabel` into `tabId` — two tables settling on one
+ * bill. The source tab's rounds move onto this tab (relabelled to this table so
+ * the kitchen stays consistent) and the source tab is marked 'merged', pointing
+ * back at the survivor. Idempotent-ish: a source that's already gone reports a
+ * clear error rather than half-merging.
+ */
+export async function mergeTab(
+  supabase: SupabaseClient,
+  tabId: string,
+  fromLabel: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const label = fromLabel.trim();
+  if (!label) return { ok: false, error: "Enter a table to merge in." };
+
+  const { data: dest } = await supabase
+    .from("tabs")
+    .select("id, status, table_label")
+    .eq("id", tabId)
+    .maybeSingle();
+  if (!dest) return { ok: false, error: "Tab not found." };
+  if (dest.status !== "open") return { ok: false, error: "This tab is closed." };
+  if (dest.table_label === label) return { ok: false, error: "That's this table." };
+
+  const src = await findOpenTab(supabase, label);
+  if (!src) return { ok: false, error: `No open tab at Table ${label}.` };
+  if (src.tabId === tabId) return { ok: false, error: "That's this table." };
+
+  // Move the source rounds onto this tab, relabelled to this table.
+  const { error: moveErr } = await supabase
+    .from("orders")
+    .update({ tab_id: tabId, table_label: dest.table_label })
+    .eq("tab_id", src.tabId);
+  if (moveErr) return { ok: false, error: "Couldn't merge the tables — please retry." };
+
+  // Retire the source tab: merged, not paid. Clearing the token unbinds its
+  // devices; merged_into records which bill it folded into.
+  const { error: mergeErr } = await supabase
+    .from("tabs")
+    .update({
+      status: "merged",
+      merged_into: tabId,
+      closed_at: new Date().toISOString(),
+      session_token: null,
+    })
+    .eq("id", src.tabId)
+    .eq("status", "open");
+  if (mergeErr) return { ok: false, error: "Couldn't merge the tables — please retry." };
+
+  return { ok: true };
+}
