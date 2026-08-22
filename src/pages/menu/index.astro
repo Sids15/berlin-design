@@ -1,17 +1,21 @@
 ---
 /**
- * Customer menu at /menu (no table) — e.g. someone browsing without scanning a
- * table QR. The per-table entry point is /menu/[table]. Back-compat: a legacy
- * ?table= still rides along.
+ * Customer menu at /menu (no table) — browsing without a table, or a device
+ * that already has a session (it's served its bound table). The per-table entry
+ * point is /menu/[table]. Legacy ?table= still binds.
  */
 import AppLayout from "../../layouts/AppLayout.astro";
 import MenuView from "../../components/order/MenuView.astro";
+import { resolveMenuAccess } from "../../lib/orders/session";
 
 export const prerender = false;
 
-const table = Astro.url.searchParams.get("table");
+const urlTable = Astro.url.searchParams.get("table");
+const access = await resolveMenuAccess(Astro.cookies, urlTable);
+const table = access.mode === "ok" ? access.table : null;
+const elsewhere = access.mode === "elsewhere" ? access.table : null;
 ---
 
 <AppLayout title="Menu — Berlin">
-  <MenuView table={table} />
+  <MenuView table={table} elsewhere={elsewhere} />
 </AppLayout>

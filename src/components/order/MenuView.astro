@@ -10,10 +10,12 @@ import { getCustomerMenu } from "../../lib/menu/queries";
 
 interface Props {
   table: string | null;
+  /** If set, this device is bound to a different table — show a notice, not the menu. */
+  elsewhere?: string | null;
 }
-const { table } = Astro.props;
+const { table, elsewhere = null } = Astro.props;
 
-const result = await getCustomerMenu();
+const result = elsewhere ? { ok: true as const, categories: [] } : await getCustomerMenu();
 
 // Three distinct outcomes: couldn't reach the menu, reached-but-empty, or a
 // real menu to render. Never let the first masquerade as the second.
@@ -39,7 +41,19 @@ const isEmpty = result.ok && categories.length === 0;
 ---
 
 {
-  failed ? (
+  elsewhere ? (
+    <main class="menu-empty">
+      <p class="menu-empty__eyebrow">Berlin · Haus de Gourmet</p>
+      <h1 class="menu-empty__title">You're seated at Table {elsewhere}</h1>
+      <p class="menu-empty__note">
+        Your session is open for Table {elsewhere}. Order from there — or ask a
+        server if you've changed tables.
+      </p>
+      <a class="menu-empty__retry" href={`/menu/${encodeURIComponent(elsewhere)}`}>
+        Go to Table {elsewhere}
+      </a>
+    </main>
+  ) : failed ? (
     <main class="menu-empty">
       <p class="menu-empty__eyebrow">Berlin · Haus de Gourmet</p>
       <h1 class="menu-empty__title">We couldn't load the menu</h1>

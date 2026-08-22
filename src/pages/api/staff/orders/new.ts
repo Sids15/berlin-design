@@ -8,6 +8,7 @@
 import type { APIRoute } from "astro";
 import { requireStaff } from "../../../../lib/auth/session";
 import { createOrder, type CreateOrderLine } from "../../../../lib/orders/create";
+import { openOrJoinTab } from "../../../../lib/orders/tabs";
 
 export const prerender = false;
 
@@ -33,9 +34,15 @@ export const POST: APIRoute = async (context) => {
     return context.redirect("/staff/new?err=empty", 303);
   }
 
+  // A server-built order joins the table's open tab (or opens one), so it bills
+  // with the guest's rounds and their scanned session shares the same tab.
+  const tab = table_label.trim()
+    ? await openOrJoinTab(context.locals.supabase, table_label.trim())
+    : null;
+
   const result = await createOrder(
     { table_label, notes, lines },
-    { source: "server", autoConfirm: true, confirmedBy: gate.user.id },
+    { source: "server", autoConfirm: true, confirmedBy: gate.user.id, tabId: tab?.tabId ?? null },
   );
 
   if (!result.ok) {

@@ -10,27 +10,49 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { TabStatus } from "../types";
 import { computeBill, type BillTotals } from "../billing";
 
+export interface OpenTab {
+  tabId: string;
+  table_label: string;
+  token: string;
+}
+
+/** A hard-to-guess session token for a tab. */
+export function generateSessionToken(): string {
+  const bytes = new Uint8Array(24);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 /**
- * The id of the open tab for a table — reusing the existing one or opening a
- * fresh one. Null when there's no table (a standalone order) or the tab
- * couldn't be resolved (the order then simply lands without a tab).
+ * The open tab for a table — reusing the existing one or opening a fresh one —
+ * always with a session token (backfilled for a legacy tab that lacks one).
+ * Null only when there's no table (a standalone order). Race-safe on the
+ * one-open-tab-per-table unique index.
  */
-export async function resolveOpenTab(
+export async function openOrJoinTab(
   supabase: SupabaseClient,
   tableLabel: string | null,
-): Promise<string | null> {
+): Promise<OpenTab | null> {
   if (!tableLabel) return null;
 
-  const open = await findOpenTab(supabase, tableLabel);
-  if (open) return open;
+  const existing = await findOpenTab(supabase, tableLabel);
+  if (existing) {
+    if (existing.token) return existing;
+    const token = generateSessionToken();
+    await supabase.from("tabs").update({ session_token: token }).eq("id", existing.tabId);
+    return { ...existing, token };
+  }
 
+  const token = generateSessionToken();
   const { data: created, error } = await supabase
     .from("tabs")
-    .insert({ table_label: tableLabel, status: "open" })
-    .select("id")
+    .insert({ table_label: tableLabel, status: "open", session_token: token })
+    .select("id, table_label")
     .single();
 
-  if (!error && created) return created.id as string;
+  if (!error && created) {
+    return { tabId: created.id as string, table_label: created.table_label as string, token };
+  }
 
   // 23505 = another round opened the tab first; re-read the winner.
   if ((error as { code?: string } | null)?.code === "23505") {
@@ -42,14 +64,19 @@ export async function resolveOpenTab(
 async function findOpenTab(
   supabase: SupabaseClient,
   tableLabel: string,
-): Promise<string | null> {
+): Promise<OpenTab | null> {
   const { data } = await supabase
     .from("tabs")
-    .select("id")
+    .select("id, table_label, session_token")
     .eq("table_label", tableLabel)
     .eq("status", "open")
     .maybeSingle();
-  return (data?.id as string | undefined) ?? null;
+  if (!data) return null;
+  return {
+    tabId: data.id as string,
+    table_label: data.table_label as string,
+    token: (data.session_token as string | null) ?? "",
+  };
 }
 
 // --- Billing (staff surfaces) ------------------------------------------------
@@ -169,12 +196,56 @@ export async function closeTab(
   if (!tab) return { ok: false, error: "Tab not found." };
   if (tab.status === "closed") return { ok: true };
 
+  // Clearing the token kills every device bound to this tab.
   const { error } = await supabase
     .from("tabs")
-    .update({ status: "closed", closed_at: new Date().toISOString(), closed_by: byUserId })
+    .update({
+      status: "closed",
+      closed_at: new Date().toISOString(),
+      closed_by: byUserId,
+      session_token: null,
+    })
     .eq("id", tabId)
     .eq("status", "open");
 
   if (error) return { ok: false, error: "Couldn't close the tab — please retry." };
+  return { ok: true };
+}
+
+/**
+ * Move an open tab (and its orders) to a different table — for guests who
+ * change tables mid-meal. Blocked if the destination already has an open tab.
+ * Sessions bind to the tab, not the label, so bound devices keep working.
+ */
+export async function moveTab(
+  supabase: SupabaseClient,
+  tabId: string,
+  newLabel: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const label = newLabel.trim();
+  if (!label) return { ok: false, error: "Enter a table to move to." };
+
+  const { data: tab } = await supabase
+    .from("tabs")
+    .select("id, status, table_label")
+    .eq("id", tabId)
+    .maybeSingle();
+  if (!tab) return { ok: false, error: "Tab not found." };
+  if (tab.status !== "open") return { ok: false, error: "That tab is closed." };
+  if (tab.table_label === label) return { ok: true };
+
+  // Destination must be free (one open tab per table).
+  const dest = await findOpenTab(supabase, label);
+  if (dest) return { ok: false, error: `Table ${label} already has an open tab.` };
+
+  const { error: tabErr } = await supabase
+    .from("tabs")
+    .update({ table_label: label })
+    .eq("id", tabId)
+    .eq("status", "open");
+  if (tabErr) return { ok: false, error: "Couldn't move the tab — please retry." };
+
+  // Keep the orders' table snapshot in step so the kitchen sees the new table.
+  await supabase.from("orders").update({ table_label: label }).eq("tab_id", tabId);
   return { ok: true };
 }

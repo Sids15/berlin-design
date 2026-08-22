@@ -13,7 +13,6 @@
  */
 import { supabaseAdmin } from "../supabase/admin";
 import { generateOrderCode } from "./code";
-import { resolveOpenTab } from "./tabs";
 import type { OrderSource } from "../types";
 
 /** One line as the client submits it — item id + quantity, nothing priced. */
@@ -40,6 +39,8 @@ export interface CreateOrderOptions {
   autoConfirm?: boolean;
   /** Staff user id credited as confirming it, when autoConfirm. */
   confirmedBy?: string | null;
+  /** The tab this order belongs to — resolved by the caller (session/staff). */
+  tabId?: string | null;
 }
 
 const MAX_QTY_PER_LINE = 50;
@@ -117,10 +118,9 @@ export async function createOrder(
 
   const table_label = normalizeText(input.table_label);
   const notes = normalizeText(input.notes);
-
-  // Attach to the table's open tab (or open one) so rounds bill together.
-  // Resolved once — the tab is the same across code-collision retries.
-  const tab_id = await resolveOpenTab(supabase, table_label);
+  // The tab is resolved by the caller: the customer's session, or the table the
+  // staff builder targeted. Rounds on the same tab bill together.
+  const tab_id = opts.tabId ?? null;
 
   // Insert the order, retrying on the (astronomically rare) code collision.
   for (let attempt = 0; attempt < CODE_RETRIES; attempt++) {
