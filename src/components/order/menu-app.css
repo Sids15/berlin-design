@@ -159,7 +159,8 @@
   height: 2.75rem;
   padding-block: var(--space-8);
   font-family: var(--font-ui);
-  font-size: var(--fs-body);
+  /* ≥16px so iOS doesn't zoom-and-reflow on focus (--fs-body is 15px). */
+  font-size: max(1rem, var(--fs-body));
   color: var(--text-strong);
   background: transparent;
   border: none;
@@ -396,7 +397,7 @@
 /* Add button — a hairline that fills with candlelight on touch. */
 .add {
   min-width: 4.25rem;
-  min-height: 2.5rem;
+  min-height: 2.75rem;
   padding-inline: var(--space-16);
   font-size: var(--fs-caption);
   letter-spacing: var(--tracking-nav);
@@ -423,8 +424,8 @@
   border: 1px solid var(--accent-muted);
 }
 .stepper__btn {
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 2.75rem;
+  height: 2.75rem;
   font-size: var(--fs-body-l);
   line-height: 1;
   color: var(--accent);
@@ -648,10 +649,11 @@
 .line__note {
   flex: 1 1 auto;
   min-width: 0;
-  height: 2.5rem;
+  height: 2.75rem;
   padding-inline: var(--space-12);
   font-family: var(--font-ui);
-  font-size: var(--fs-body);
+  /* ≥16px so iOS doesn't zoom-and-reflow on focus (--fs-body is 15px). */
+  font-size: max(1rem, var(--fs-body));
   color: var(--text-strong);
   background: var(--bg);
   border: 1px solid var(--border-subtle);
