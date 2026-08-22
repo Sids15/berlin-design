@@ -55,7 +55,32 @@ export default function MenuApp({ categories, table }: Props) {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [placing, setPlacing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Availability, kept live: a dish 86'd in the kitchen drops off the menu.
+  // Starts as every item (matches SSR), then the poll narrows it.
+  const [availableIds, setAvailableIds] = useState<Set<string>>(
+    () => new Set(Object.keys(allItems)),
+  );
   const hydrated = useRef(false);
+
+  // Poll availability so 86 changes show without a reload.
+  useEffect(() => {
+    let alive = true;
+    const tick = async () => {
+      try {
+        const res = await fetch("/api/menu/availability", { cache: "no-store" });
+        if (!res.ok) return;
+        const data = (await res.json()) as { ids?: string[] };
+        if (alive && Array.isArray(data.ids)) setAvailableIds(new Set(data.ids));
+      } catch {
+        /* transient — next tick retries */
+      }
+    };
+    const id = setInterval(tick, 5000);
+    return () => {
+      alive = false;
+      clearInterval(id);
+    };
+  }, []);
 
   // Load a saved cart once, on mount.
   useEffect(() => {
@@ -118,6 +143,7 @@ export default function MenuApp({ categories, table }: Props) {
       .map((c) => ({
         ...c,
         items: c.items.filter((i) => {
+          if (!availableIds.has(i.id)) return false; // 86'd — hide it live
           if (veg.size && !veg.has(i.veg_type)) return false;
           if (!q) return true;
           const hay = `${i.name} ${i.description ?? ""} ${i.tags.join(" ")}`.toLowerCase();
@@ -125,7 +151,7 @@ export default function MenuApp({ categories, table }: Props) {
         }),
       }))
       .filter((c) => c.items.length > 0);
-  }, [categories, veg, q]);
+  }, [categories, veg, q, availableIds]);
 
   const toggleVeg = (key: VegType) =>
     setVeg((s) => {

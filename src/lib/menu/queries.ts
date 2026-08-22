@@ -67,6 +67,14 @@ export async function getCustomerMenu(): Promise<MenuResult> {
   }
 }
 
+/** Ids of currently-available items — for the customer menu's live 86 poll. */
+export async function getAvailableItemIds(): Promise<string[]> {
+  const supabase = anonClient();
+  const { data, error } = await supabase.from("menu_items").select("id").eq("is_available", true);
+  if (error) return [];
+  return (data ?? []).map((r) => r.id as string);
+}
+
 /** A flat list of all available items (for search/filter on the client). */
 export async function getAvailableItems(): Promise<MenuItem[]> {
   const supabase = anonClient();
