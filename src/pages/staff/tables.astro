@@ -1,0 +1,120 @@
+---
+/**
+ * Table QR provisioning (Feature 7 / billing step 5). Staff type table labels
+ * and get a printable sheet of QR cards — each encodes /menu/<label>, the
+ * canonical customer entry point that binds a device to that table's open tab.
+ * Stateless: the label set rides in ?labels= so a sheet is re-printable and
+ * shareable without storing a table entity. Behind the auth middleware
+ * (server + manager); the kitchen doesn't provision the floor.
+ */
+import QRCode from "qrcode";
+import AppLayout from "../../layouts/AppLayout.astro";
+import StationMasthead from "../../components/staff/StationMasthead.astro";
+import "../../styles/staff.css";
+import "../../styles/table-qr.css";
+
+export const prerender = false;
+
+const { profile } = Astro.locals;
+if (profile!.role !== "manager" && profile!.role !== "server") {
+  return Astro.redirect("/staff", 302);
+}
+
+const MAX_LABELS = 200;
+const MAX_LEN = 24;
+
+// Comma / newline separated so multi-word labels ("Patio A") survive; trimmed,
+// whitespace-collapsed, length-capped, de-duplicated, and count-bounded.
+const raw = Astro.url.searchParams.get("labels") ?? "";
+const labels = [
+  ...new Set(
+    raw
+      .split(/[\n,]/)
+      .map((s) => s.trim().replace(/\s+/g, " ").slice(0, MAX_LEN))
+      .filter(Boolean),
+  ),
+].slice(0, MAX_LABELS);
+
+const origin = Astro.url.origin;
+
+const cards = await Promise.all(
+  labels.map(async (label) => {
+    const url = `${origin}/menu/${encodeURIComponent(label)}`;
+    // Dark ink on a white quiet zone — printed on paper, this scans reliably.
+    const svg = await QRCode.toString(url, {
+      type: "svg",
+      margin: 1,
+      color: { dark: "#171512", light: "#ffffff" },
+    });
+    return { label, url, svg };
+  }),
+);
+
+const prefill = labels.join(", ");
+---
+
+<AppLayout title="Table QR codes — Berlin">
+  <main class="st-shell tblq">
+    <StationMasthead eyebrow="Berlin · Back of house" title="Table QR codes">
+      <a class="st-back" slot="actions" href="/staff">
+        <span aria-hidden="true">←</span> Order desk
+      </a>
+    </StationMasthead>
+
+    <form class="tblq__form no-print st-rise-2" method="get" action="/staff/tables">
+      <div class="st-field">
+        <label class="st-field__label" for="labels">Table labels</label>
+        <input
+          class="st-field__input"
+          id="labels"
+          name="labels"
+          type="text"
+          value={prefill}
+          placeholder="1, 2, 3, Patio-A"
+          autocomplete="off"
+          enterkeyhint="go"
+        />
+      </div>
+      <p class="tblq__hint">
+        Separate with commas. Each label becomes a QR that opens the menu for that
+        table and starts its tab.
+      </p>
+      <div class="tblq__controls">
+        <button class="st-btn st-btn--primary" type="submit">
+          <span>Generate</span>
+          <span class="st-btn__arrow" aria-hidden="true">→</span>
+        </button>
+        {cards.length > 0 && (
+          <button id="print-btn" class="st-btn st-btn--ghost" type="button">Print sheet</button>
+        )}
+      </div>
+    </form>
+
+    {cards.length === 0 ? (
+      <p class="st-empty st-rise-2">
+        No codes yet. Enter your table labels above to generate a printable sheet.
+      </p>
+    ) : (
+      <section class="sheet st-rise-2" aria-label="Table QR sheet">
+        <p class="sheet__lead no-print">
+          <strong>{cards.length}</strong> {cards.length === 1 ? "card" : "cards"} · print,
+          cut, and place one on each table.
+        </p>
+        <div class="sheet__grid">
+          {cards.map((c) => (
+            <article class="qrcard">
+              <p class="qrcard__brand">Berlin · Haus de Gourmet</p>
+              <div class="qrcard__code" set:html={c.svg} />
+              <p class="qrcard__table"><span class="qrcard__word">Table</span>{c.label}</p>
+              <p class="qrcard__scan">Scan to view the menu &amp; order</p>
+            </article>
+          ))}
+        </div>
+      </section>
+    )}
+  </main>
+</AppLayout>
+
+<script>
+  document.getElementById("print-btn")?.addEventListener("click", () => window.print());
+</script>

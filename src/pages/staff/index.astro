@@ -57,6 +57,7 @@ function when(iso: string): string {
         <nav class="st-nav" aria-label="Staff sections">
           {profile!.role === "manager" && <a class="st-navlink" href="/admin">Menu</a>}
           {canTake && <a class="st-navlink" href="/staff/tabs">Tabs</a>}
+          {canTake && <a class="st-navlink" href="/staff/tables">QR codes</a>}
           {canTake && (
             <a class="st-cta" href="/staff/new">
               <span aria-hidden="true">＋</span> Build order
