@@ -1,0 +1,102 @@
+---
+/**
+ * MenuView — the customer menu body, shared by /menu and /menu/[table] so the
+ * two routes never drift. Server-rendered: reads the live menu (anon key,
+ * available items) each request, then hands it to the MenuApp island. `table`
+ * is where the order's table comes from (the QR encodes /menu/<table>).
+ */
+import MenuApp from "./MenuApp.tsx";
+import { getCustomerMenu } from "../../lib/menu/queries";
+
+interface Props {
+  table: string | null;
+}
+const { table } = Astro.props;
+
+const result = await getCustomerMenu();
+
+// Three distinct outcomes: couldn't reach the menu, reached-but-empty, or a
+// real menu to render. Never let the first masquerade as the second.
+const failed = !result.ok;
+
+const categories = result.ok
+  ? result.categories.map((c) => ({
+      id: c.id,
+      name: c.name,
+      items: c.items.map((i) => ({
+        id: i.id,
+        name: i.name,
+        description: i.description,
+        price: Number(i.price),
+        veg_type: i.veg_type,
+        tags: i.tags,
+        is_signature: i.is_signature,
+      })),
+    }))
+  : [];
+
+const isEmpty = result.ok && categories.length === 0;
+---
+
+{
+  failed ? (
+    <main class="menu-empty">
+      <p class="menu-empty__eyebrow">Berlin · Haus de Gourmet</p>
+      <h1 class="menu-empty__title">We couldn't load the menu</h1>
+      <p class="menu-empty__note">
+        Something went wrong on our side. Please try again in a moment.
+      </p>
+      <a class="menu-empty__retry" href={Astro.url.pathname + Astro.url.search}>Try again</a>
+    </main>
+  ) : isEmpty ? (
+    <main class="menu-empty">
+      <p class="menu-empty__eyebrow">Berlin · Haus de Gourmet</p>
+      <h1 class="menu-empty__title">The menu is being set</h1>
+      <p class="menu-empty__note">
+        Our kitchen is updating tonight's offering. Please check back in a moment.
+      </p>
+    </main>
+  ) : (
+    <main>
+      <MenuApp client:load categories={categories} table={table} />
+    </main>
+  )
+}
+
+<style>
+  .menu-empty {
+    min-height: 100svh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: var(--gutter);
+    max-width: var(--container-editorial);
+    margin-inline: auto;
+    text-align: center;
+  }
+  .menu-empty__eyebrow {
+    font-size: var(--fs-caption);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .menu-empty__title {
+    margin-block-start: var(--space-16);
+    font-family: var(--font-display);
+    font-size: var(--fs-display-s);
+    color: var(--text-strong);
+  }
+  .menu-empty__note {
+    margin: var(--space-24) auto 0;
+    color: var(--text-muted);
+  }
+  .menu-empty__retry {
+    margin: var(--space-24) auto 0;
+    font-size: var(--fs-caption);
+    letter-spacing: var(--tracking-nav);
+    text-transform: uppercase;
+    color: var(--accent);
+    border-bottom: 1px solid var(--accent-muted);
+    padding-block-end: var(--space-4);
+  }
+</style>

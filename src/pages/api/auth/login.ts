@@ -22,13 +22,25 @@ export const POST: APIRoute = async (context) => {
   }
 
   const supabase = supabaseServer(context);
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
     return context.redirect(loginUrl(next, "invalid"), 303);
   }
 
-  return context.redirect(next, 303);
+  // With no explicit destination, land staff on their home surface: kitchen
+  // staff on the board, everyone else on the order desk.
+  let dest = next;
+  if (next === "/staff" && data.user) {
+    const { data: prof } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", data.user.id)
+      .maybeSingle();
+    if (prof?.role === "kitchen") dest = "/kitchen";
+  }
+
+  return context.redirect(dest, 303);
 };
 
 function loginUrl(next: string, err: string): string {

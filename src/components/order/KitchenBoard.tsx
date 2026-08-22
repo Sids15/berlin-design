@@ -102,14 +102,17 @@ export default function KitchenBoard({
             ))}
           </ul>
           {o.notes && <p className="ticket__note">Note: {o.notes}</p>}
-          <button
-            type="button"
-            className="ticket__advance"
-            onClick={() => complete(o.code)}
-            disabled={busy.has(o.code)}
-          >
-            {busy.has(o.code) ? "…" : "Complete"}
-          </button>
+          <div className="ticket__actions">
+            <a className="ticket__slip" href={`/staff/orders/${o.code}/slip`}>Print slip</a>
+            <button
+              type="button"
+              className="ticket__advance"
+              onClick={() => complete(o.code)}
+              disabled={busy.has(o.code)}
+            >
+              {busy.has(o.code) ? "…" : "Complete"}
+            </button>
+          </div>
         </article>
       ))}
     </div>

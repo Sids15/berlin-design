@@ -75,9 +75,28 @@
   padding-block-start: var(--space-8);
   border-top: 1px solid var(--border-subtle);
 }
-.ticket__advance {
-  min-height: 2.75rem;
+.ticket__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
   margin-block-start: var(--space-4);
+}
+.ticket__slip {
+  flex: 0 0 auto;
+  font-size: var(--fs-caption);
+  letter-spacing: var(--tracking-meta);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-subtle);
+  padding-block-end: 2px;
+}
+.ticket__slip:hover {
+  color: var(--text-strong);
+  border-color: var(--accent-muted);
+}
+.ticket__advance {
+  flex: 1 1 auto;
+  min-height: 2.75rem;
   background: var(--accent);
   color: var(--color-warm-black);
   border: none;

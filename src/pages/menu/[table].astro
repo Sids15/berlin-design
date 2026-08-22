@@ -1,0 +1,18 @@
+---
+/**
+ * Customer menu for a specific table — /menu/<table>. This is what a table's QR
+ * code encodes, so scanning drops the guest straight onto the menu with their
+ * table set. The table label is taken from the path and rides through to the
+ * placed order (and its tab).
+ */
+import AppLayout from "../../layouts/AppLayout.astro";
+import MenuView from "../../components/order/MenuView.astro";
+
+export const prerender = false;
+
+const table = Astro.params.table ?? null;
+---
+
+<AppLayout title={table ? `Menu · Table ${table} — Berlin` : "Menu — Berlin"}>
+  <MenuView table={table} />
+</AppLayout>
