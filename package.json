@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": "22.x"
+  },
   "description": "BERLIN — Haus de Gourmet. A nocturnal editorial website for a rooftop gourmet house and bar.",
   "scripts": {
     "dev": "astro dev",
