@@ -29,7 +29,6 @@ const initialMenu = canEditAvailability ? await getKitchenMenu(supabase) : [];
         <h1 class="kitchen__title">Live orders</h1>
       </div>
       <div class="kitchen__who">
-        <a class="kitchen__link" href="/staff">Order desk</a>
         <span class="kitchen__role">{profile!.role}</span>
         <form method="post" action="/api/auth/logout">
           <button class="kitchen__signout" type="submit">Sign out</button>
