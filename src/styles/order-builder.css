@@ -40,7 +40,8 @@
   height: 2.75rem;
   padding-block: var(--space-8);
   font-family: var(--font-ui);
-  font-size: var(--fs-body);
+  /* ≥16px so iOS doesn't zoom-and-reflow on focus (--fs-body is 15px). */
+  font-size: max(1rem, var(--fs-body));
   color: var(--text-strong);
   background: transparent;
   border: none;

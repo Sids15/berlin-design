@@ -117,7 +117,7 @@
 }
 .pcard__confirm,
 .pcard__cancel {
-  min-height: 2.5rem;
+  min-height: 2.75rem;
   padding-inline: var(--space-16);
   font: inherit;
   font-weight: 600;
