@@ -1,8 +1,9 @@
 ---
 /**
- * Staff login (Feature 4). Public within the protected /staff area. Posts
- * credentials to /api/auth/login, which signs in and sets the session cookies.
- * Already-signed-in staff are sent straight through to their destination.
+ * Staff login. Public within the protected /staff area. Posts credentials to
+ * /api/auth/login, which signs in and sets the session cookies. Already-signed-in
+ * staff are sent through — unless their role can't open the target, in which case
+ * the form is shown so they can sign in with the right account.
  */
 import AppLayout from "../../layouts/AppLayout.astro";
 import { safeNext } from "../../lib/http/safe-next";
@@ -14,9 +15,6 @@ const params = Astro.url.searchParams;
 const next = safeNext(params.get("next"));
 const error = params.get("error");
 
-// If already signed in, skip the form — but only when this account's role may
-// actually open `next`. A kitchen account aiming at the order desk (or vice
-// versa) must sign in with the other account, so we show the form instead.
 let signedInRole: string | null = null;
 const {
   data: { user },
@@ -40,24 +38,26 @@ const ERROR_COPY: Record<string, string> = {
 const errorText = error ? (ERROR_COPY[error] ?? "Couldn't sign you in.") : null;
 ---
 
-<AppLayout title="Staff sign-in — Berlin">
+<AppLayout title="Sign in — Berlin">
   <main class="login">
-    <div class="login__card">
+    <div class="login__stage">
       <header class="login__head">
         <p class="login__eyebrow">Berlin · Haus de Gourmet</p>
-        <h1 class="login__title">Staff sign-in</h1>
-        <p class="login__note">For servers, kitchen, and managers.</p>
+        <h1 class="login__title">Sign in</h1>
+        <p class="login__sub">Welcome back. Sign in to continue.</p>
       </header>
 
-      {errorText && <p class="login__error" role="alert">{errorText}</p>}
+      {errorText && <p class="login__alert login__alert--error" role="alert">{errorText}</p>}
       {signedInRole && !errorText && (
-        <p class="login__error" role="status">
-          Signed in as {signedInRole}. Sign in with the account for this area to continue.
+        <p class="login__alert" role="status">
+          You're signed in as <strong>{signedInRole}</strong>. Sign in with the
+          account for this area to continue.
         </p>
       )}
 
       <form class="login__form" method="post" action="/api/auth/login">
         <input type="hidden" name="next" value={next} />
+
         <label class="field">
           <span class="field__label">Email</span>
           <input
@@ -69,6 +69,7 @@ const errorText = error ? (ERROR_COPY[error] ?? "Couldn't sign you in.") : null;
             autofocus
           />
         </label>
+
         <label class="field">
           <span class="field__label">Password</span>
           <input
@@ -77,99 +78,282 @@ const errorText = error ? (ERROR_COPY[error] ?? "Couldn't sign you in.") : null;
             name="password"
             autocomplete="current-password"
             required
+            data-password
           />
+          <button type="button" class="field__reveal" data-reveal aria-pressed="false">
+            Show
+          </button>
         </label>
-        <button class="login__submit" type="submit">Sign in</button>
+
+        <button class="login__submit" type="submit" data-submit>
+          <span class="login__submit-label">Sign in</span>
+          <svg class="login__submit-arrow" width="34" height="8" viewBox="0 0 34 8" fill="none" aria-hidden="true">
+            <path d="M0 4h32M32 4l-5-3.25M32 4l-5 3.25" stroke="currentColor" stroke-width="1" stroke-linecap="square" />
+          </svg>
+        </button>
       </form>
+
+      <p class="login__foot">Staff & kitchen access</p>
     </div>
   </main>
 </AppLayout>
 
+<script>
+  // Show/hide password.
+  const reveal = document.querySelector<HTMLButtonElement>("[data-reveal]");
+  const pw = document.querySelector<HTMLInputElement>("[data-password]");
+  reveal?.addEventListener("click", () => {
+    const show = pw?.type === "password";
+    if (pw) pw.type = show ? "text" : "password";
+    reveal.textContent = show ? "Hide" : "Show";
+    reveal.setAttribute("aria-pressed", String(show));
+  });
+
+  // Loading state on submit (native validation still runs first).
+  const form = document.querySelector<HTMLFormElement>(".login__form");
+  const submit = document.querySelector<HTMLButtonElement>("[data-submit]");
+  const label = submit?.querySelector<HTMLElement>(".login__submit-label");
+  form?.addEventListener("submit", () => {
+    if (form.checkValidity() && submit && label) {
+      submit.disabled = true;
+      label.textContent = "Signing in…";
+    }
+  });
+</script>
+
 <style>
   .login {
+    position: relative;
     min-height: 100svh;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: var(--gutter);
+    overflow: hidden;
+    background: var(--color-void);
   }
-  .login__card {
+  /* Ambient champagne glow — depth without imagery. */
+  .login::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(60% 45% at 50% 12%, rgba(180, 154, 99, 0.12), transparent 70%),
+      radial-gradient(80% 60% at 50% 120%, rgba(180, 154, 99, 0.06), transparent 70%);
+  }
+
+  .login__stage {
+    position: relative;
+    z-index: 1;
     width: 100%;
     max-width: 24rem;
     display: flex;
     flex-direction: column;
-    gap: var(--space-24);
-    padding: var(--space-32);
-    border: 1px solid var(--border-subtle);
-    background: var(--bg-elevated);
+    gap: var(--space-32);
   }
+
+  /* --- Header ------------------------------------------------------------- */
   .login__head {
-    text-align: center;
+    display: flex;
+    flex-direction: column;
   }
   .login__eyebrow {
+    font-family: var(--font-ui);
     font-size: var(--fs-caption);
+    font-weight: 500;
     letter-spacing: var(--tracking-label);
     text-transform: uppercase;
     color: var(--accent);
   }
+  .login__eyebrow::after {
+    content: "";
+    display: block;
+    width: 2.75rem;
+    height: 1px;
+    margin-block-start: var(--space-16);
+    background: var(--accent-muted);
+  }
   .login__title {
-    margin-block-start: var(--space-8);
+    margin-block-start: var(--space-24);
     font-family: var(--font-display);
     font-size: var(--fs-display-s);
+    line-height: var(--lh-display);
+    letter-spacing: var(--tracking-display);
     color: var(--text-strong);
   }
-  .login__note {
-    margin-block-start: var(--space-8);
-    font-size: var(--fs-caption);
+  .login__sub {
+    margin-block-start: var(--space-12);
+    font-size: var(--fs-body);
     color: var(--text-muted);
   }
-  .login__error {
+
+  /* --- Alerts ------------------------------------------------------------- */
+  .login__alert {
     padding: var(--space-12) var(--space-16);
-    border: 1px solid var(--color-berlin-red);
-    background: color-mix(in srgb, var(--color-berlin-red) 14%, transparent);
-    color: var(--text-strong);
     font-size: var(--fs-caption);
+    line-height: 1.5;
+    color: var(--text);
+    border-inline-start: 2px solid var(--accent);
+    background: color-mix(in srgb, var(--accent) 9%, transparent);
   }
+  .login__alert strong {
+    color: var(--text-strong);
+    text-transform: capitalize;
+  }
+  .login__alert--error {
+    border-inline-start-color: var(--color-berlin-red);
+    background: color-mix(in srgb, var(--color-berlin-red) 14%, transparent);
+  }
+
+  /* --- Form --------------------------------------------------------------- */
   .login__form {
     display: flex;
     flex-direction: column;
-    gap: var(--space-16);
+    gap: var(--space-32);
   }
   .field {
+    position: relative;
     display: flex;
     flex-direction: column;
     gap: var(--space-8);
   }
   .field__label {
-    font-size: var(--fs-caption);
-    letter-spacing: var(--tracking-meta);
+    font-size: var(--fs-label);
+    font-weight: 500;
+    letter-spacing: var(--tracking-label);
     text-transform: uppercase;
     color: var(--text-muted);
+    transition: color 0.3s var(--ease-out);
+  }
+  .field:focus-within .field__label {
+    color: var(--accent);
   }
   .field__input {
-    padding: var(--space-12) var(--space-16);
-    background: var(--color-void);
-    border: 1px solid var(--border-subtle);
+    width: 100%;
+    padding: var(--space-12) 0;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border-strong);
     color: var(--text-strong);
     font: inherit;
+    font-size: var(--fs-body-l);
+    border-radius: 0;
   }
   .field__input:focus {
     outline: none;
-    border-color: var(--accent);
   }
+  /* The signature: a champagne line drawing in from the left on focus. */
+  .field::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    inset-block-end: 0;
+    height: 1px;
+    background: var(--accent);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.45s var(--ease-out);
+  }
+  .field:focus-within::after {
+    transform: scaleX(1);
+  }
+  /* Keep autofill on-theme (no white box on the void ground). */
+  .field__input:-webkit-autofill,
+  .field__input:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--text-strong);
+    -webkit-box-shadow: 0 0 0 1000px var(--color-void) inset;
+    caret-color: var(--text-strong);
+    transition: background-color 9999s ease-out 0s;
+  }
+  .field__reveal {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-end: 0;
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    font-size: var(--fs-label);
+    letter-spacing: var(--tracking-meta);
+    text-transform: uppercase;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: color 0.3s var(--ease-out);
+  }
+  .field__reveal:hover,
+  .field__reveal:focus-visible {
+    color: var(--accent);
+    outline: none;
+  }
+
+  /* --- Submit ------------------------------------------------------------- */
   .login__submit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-16);
     min-height: var(--btn-height);
+    padding-inline: var(--space-24);
     margin-block-start: var(--space-8);
     background: var(--accent);
     color: var(--color-warm-black);
     border: none;
     font: inherit;
+    font-weight: 600;
+    font-size: var(--fs-caption);
     letter-spacing: var(--tracking-nav);
     text-transform: uppercase;
     cursor: pointer;
-    transition: opacity 150ms var(--ease-smooth);
+    transition: background-color 0.35s var(--ease-out), transform 0.2s var(--ease-out);
   }
   .login__submit:hover {
-    opacity: 0.9;
+    background: var(--color-white);
+  }
+  .login__submit:active {
+    transform: translateY(1px);
+  }
+  .login__submit:disabled {
+    opacity: 0.7;
+    cursor: progress;
+  }
+  .login__submit-arrow {
+    transition: transform 0.35s var(--ease-out);
+  }
+  .login__submit:hover .login__submit-arrow {
+    transform: translateX(4px);
+  }
+
+  .login__foot {
+    font-size: var(--fs-label);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  /* --- Entrance ----------------------------------------------------------- */
+  @media (prefers-reduced-motion: no-preference) {
+    .login__head,
+    .login__form,
+    .login__foot {
+      animation: login-rise var(--dur-entry) var(--ease-out) both;
+    }
+    .login__form {
+      animation-delay: 140ms;
+    }
+    .login__foot {
+      animation-delay: 260ms;
+    }
+    @keyframes login-rise {
+      from {
+        opacity: 0;
+        transform: translateY(16px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
   }
 </style>
