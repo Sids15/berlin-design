@@ -1,6 +1,7 @@
 /**
- * POST /api/staff/kitchen/<code> — mark a ticket complete (served). Any
- * signed-in staff may complete. Returns JSON for the board island (fetch).
+ * POST /api/staff/kitchen/<code> — mark a ticket complete (served). Kitchen
+ * only: the kitchen completes its own tickets, not the manager on its behalf.
+ * Returns JSON for the board island (fetch).
  */
 import type { APIRoute } from "astro";
 import { requireStaff } from "../../../../lib/auth/session";
@@ -9,7 +10,7 @@ import { completeOrder } from "../../../../lib/orders/kitchen";
 export const prerender = false;
 
 export const POST: APIRoute = async (context) => {
-  const gate = requireStaff(context.locals);
+  const gate = requireStaff(context.locals, ["kitchen"]);
   if (gate instanceof Response) return gate;
 
   const code = (context.params.code ?? "").toUpperCase();

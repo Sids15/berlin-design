@@ -11,11 +11,15 @@ import { getStaffOrder } from "../../../../lib/orders/staff";
 
 export const prerender = false;
 
-const { supabase } = Astro.locals;
+const { supabase, profile } = Astro.locals;
 const code = (Astro.params.code ?? "").toUpperCase();
 const order = await getStaffOrder(supabase, code);
 
 if (!order) Astro.response.status = 404;
+
+// Back to wherever this role works — kitchen prints slips too.
+const backHref =
+  profile!.role === "kitchen" ? "/kitchen" : `/staff?code=${order?.code ?? ""}`;
 
 function when(iso: string): string {
   try {
@@ -38,7 +42,7 @@ function when(iso: string): string {
     ) : (
       <>
         <div class="actions no-print">
-          <a class="actions__back" href={`/staff?code=${order.code}`}>← Back</a>
+          <a class="actions__back" href={backHref}>← Back</a>
           <button id="print-btn" type="button" class="actions__print">Print slip</button>
         </div>
 

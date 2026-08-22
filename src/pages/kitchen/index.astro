@@ -37,7 +37,7 @@ const initialMenu = canEditAvailability ? await getKitchenMenu(supabase) : [];
       </div>
     </header>
 
-    <KitchenBoard client:load initialOrders={initialOrders} />
+    <KitchenBoard client:load initialOrders={initialOrders} canComplete={profile!.role === "kitchen"} />
 
     {canEditAvailability && <AvailabilityPanel client:load initialMenu={initialMenu} />}
   </main>

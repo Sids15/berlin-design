@@ -26,8 +26,10 @@ const POLL_MS = 4000;
 
 export default function KitchenBoard({
   initialOrders,
+  canComplete = true,
 }: {
   initialOrders: KitchenOrderData[];
+  canComplete?: boolean;
 }) {
   const [orders, setOrders] = useState<KitchenOrderData[]>(initialOrders);
   const [busy, setBusy] = useState<Set<string>>(new Set());
@@ -104,14 +106,16 @@ export default function KitchenBoard({
           {o.notes && <p className="ticket__note">Note: {o.notes}</p>}
           <div className="ticket__actions">
             <a className="ticket__slip" href={`/staff/orders/${o.code}/slip`}>Print slip</a>
-            <button
-              type="button"
-              className="ticket__advance"
-              onClick={() => complete(o.code)}
-              disabled={busy.has(o.code)}
-            >
-              {busy.has(o.code) ? "…" : "Complete"}
-            </button>
+            {canComplete && (
+              <button
+                type="button"
+                className="ticket__advance"
+                onClick={() => complete(o.code)}
+                disabled={busy.has(o.code)}
+              >
+                {busy.has(o.code) ? "…" : "Complete"}
+              </button>
+            )}
           </div>
         </article>
       ))}

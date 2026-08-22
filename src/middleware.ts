@@ -1,6 +1,7 @@
 import { defineMiddleware } from "astro:middleware";
 import { supabaseServer } from "./lib/supabase/server";
 import { loadStaff } from "./lib/auth/session";
+import { roleCanAccess } from "./lib/auth/access";
 
 /**
  * Guards the staff-facing surfaces. Every request gets a request-scoped Supabase
@@ -35,6 +36,13 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
     // Pages redirect to login; APIs fall through and answer with JSON 401/403.
     if (protectedPage && !profile) {
+      const next = encodeURIComponent(pathname + context.url.search);
+      return context.redirect(`/staff/login?next=${next}`, 302);
+    }
+
+    // Wrong role for this surface → back to login. Switching between the kitchen
+    // and the order desk means signing in with the other account.
+    if (protectedPage && profile && !roleCanAccess(pathname, profile.role)) {
       const next = encodeURIComponent(pathname + context.url.search);
       return context.redirect(`/staff/login?next=${next}`, 302);
     }
