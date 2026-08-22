@@ -23,6 +23,7 @@ if (!bill) Astro.response.status = 404;
 
 const params = Astro.url.searchParams;
 const justClosed = params.get("closed") === "1";
+const justMoved = params.get("moved") === "1";
 const err = params.get("err");
 
 const pct = (r: number) => `${Math.round(r * 100)}%`;
@@ -46,7 +47,18 @@ const pct = (r: number) => `${Math.round(r * 100)}%`;
           </div>
         </div>
 
+        {bill.status === "open" && (
+          <form class="move no-print" method="post" action={`/api/staff/tabs/${bill.id}/move`}>
+            <label class="move__label" for="move-to">Move this tab to table</label>
+            <div class="move__row">
+              <input class="move__input" id="move-to" name="to" placeholder="e.g. 8" autocomplete="off" />
+              <button class="move__go" type="submit">Move</button>
+            </div>
+          </form>
+        )}
+
         {justClosed && <p class="flash no-print" role="status">Tab closed — marked paid.</p>}
+        {justMoved && <p class="flash no-print" role="status">Tab moved to Table {bill.table_label}.</p>}
         {err && <p class="flash flash--err no-print" role="alert">{err}</p>}
 
         <article class="bill">
@@ -143,6 +155,48 @@ const pct = (r: number) => `${Math.round(r * 100)}%`;
     text-transform: uppercase;
     letter-spacing: var(--tracking-nav);
     cursor: pointer;
+  }
+  .move {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+  }
+  .move__label {
+    font-size: var(--fs-caption);
+    letter-spacing: var(--tracking-meta);
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .move__row {
+    display: flex;
+    gap: var(--space-12);
+  }
+  .move__input {
+    flex: 1 1 auto;
+    padding: var(--space-12) var(--space-16);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-strong);
+    font: inherit;
+  }
+  .move__input:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .move__go {
+    flex: 0 0 auto;
+    padding-inline: var(--space-24);
+    background: none;
+    color: var(--text-muted);
+    border: 1px solid var(--border-subtle);
+    font: inherit;
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-nav);
+    cursor: pointer;
+  }
+  .move__go:hover {
+    color: var(--text-strong);
+    border-color: var(--accent);
   }
   .flash {
     padding: var(--space-12) var(--space-16);
