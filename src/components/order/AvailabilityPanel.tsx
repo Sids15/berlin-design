@@ -1,0 +1,114 @@
+/**
+ * AvailabilityPanel — the 86 / sold-out toggle, a section under the kitchen
+ * board. Kitchen + manager flip a dish available or sold out; the change hides
+ * it from the customer menu. Optimistic on tap, reverting if the write fails,
+ * and polls every few seconds so a second station's changes show up.
+ *
+ * Initial state comes from props (deterministic), so SSR and hydration match.
+ */
+import { useEffect, useState } from "react";
+import "./availability-panel.css";
+
+interface Item {
+  id: string;
+  name: string;
+  is_available: boolean;
+}
+interface Category {
+  id: string;
+  name: string;
+  items: Item[];
+}
+
+const POLL_MS = 8000;
+
+export default function AvailabilityPanel({
+  initialMenu,
+}: {
+  initialMenu: Category[];
+}) {
+  const [menu, setMenu] = useState<Category[]>(initialMenu);
+  const [busy, setBusy] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    let alive = true;
+    const tick = async () => {
+      try {
+        const res = await fetch("/api/staff/kitchen/menu", { cache: "no-store" });
+        if (!res.ok) return;
+        const data = (await res.json()) as { menu?: Category[] };
+        // Don't clobber a row mid-toggle.
+        if (alive && Array.isArray(data.menu) && busy.size === 0) setMenu(data.menu);
+      } catch {
+        /* transient — next tick retries */
+      }
+    };
+    const id = setInterval(tick, POLL_MS);
+    return () => {
+      alive = false;
+      clearInterval(id);
+    };
+  }, [busy]);
+
+  function setItem(id: string, is_available: boolean) {
+    setMenu((prev) =>
+      prev.map((c) => ({
+        ...c,
+        items: c.items.map((i) => (i.id === id ? { ...i, is_available } : i)),
+      })),
+    );
+  }
+
+  async function toggle(id: string, current: boolean) {
+    const next = !current;
+    setBusy((s) => new Set(s).add(id));
+    setItem(id, next); // optimistic
+    try {
+      const res = await fetch("/api/staff/kitchen/availability", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ itemId: id, available: next }),
+      });
+      if (!res.ok) setItem(id, current); // revert on failure
+    } catch {
+      setItem(id, current);
+    } finally {
+      setBusy((s) => {
+        const n = new Set(s);
+        n.delete(id);
+        return n;
+      });
+    }
+  }
+
+  return (
+    <section className="avail" aria-label="Dish availability">
+      <header className="avail__head">
+        <h2 className="avail__title">Availability · 86</h2>
+      </header>
+      <div className="avail__cats">
+        {menu.map((c) => (
+          <div key={c.id} className="avail__cat">
+            <h3 className="avail__catname">{c.name}</h3>
+            <ul className="avail__list">
+              {c.items.map((it) => (
+                <li key={it.id} className={`arow ${it.is_available ? "" : "arow--off"}`}>
+                  <span className="arow__name">{it.name}</span>
+                  <button
+                    type="button"
+                    className={`arow__toggle ${it.is_available ? "is-on" : "is-off"}`}
+                    onClick={() => toggle(it.id, it.is_available)}
+                    disabled={busy.has(it.id)}
+                    aria-pressed={!it.is_available}
+                  >
+                    {it.is_available ? "Available" : "86'd"}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}

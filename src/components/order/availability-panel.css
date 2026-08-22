@@ -1,0 +1,79 @@
+/* =============================================================================
+   AvailabilityPanel — the 86 / sold-out toggle under the kitchen board.
+   ========================================================================== */
+
+.avail {
+  margin-block-start: var(--space-48);
+  padding-block-start: var(--space-24);
+  border-top: 1px solid var(--border-subtle);
+}
+.avail__head {
+  padding-block-end: var(--space-16);
+}
+.avail__title {
+  font-size: var(--fs-caption);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.avail__cats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+  gap: var(--space-24);
+  align-items: start;
+}
+.avail__catname {
+  font-family: var(--font-display);
+  font-size: var(--fs-heading-s);
+  color: var(--text-strong);
+  padding-block-end: var(--space-8);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.avail__list {
+  display: flex;
+  flex-direction: column;
+}
+.arow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-16);
+  padding-block: var(--space-12);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.arow__name {
+  min-width: 0;
+  color: var(--text);
+}
+.arow--off .arow__name {
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+.arow__toggle {
+  flex: 0 0 auto;
+  min-width: 6rem;
+  min-height: 2.25rem;
+  padding-inline: var(--space-12);
+  font: inherit;
+  font-size: var(--fs-caption);
+  letter-spacing: var(--tracking-meta);
+  text-transform: uppercase;
+  cursor: pointer;
+  border: 1px solid var(--border-subtle);
+  background: none;
+  transition: color 0.2s var(--ease-out), border-color 0.2s var(--ease-out),
+    background-color 0.2s var(--ease-out);
+}
+.arow__toggle.is-on {
+  color: #6fae5c;
+  border-color: color-mix(in srgb, #4c8b4a 60%, var(--border-subtle));
+}
+.arow__toggle.is-off {
+  color: #c76b60;
+  border-color: var(--color-berlin-red);
+  background: color-mix(in srgb, var(--color-berlin-red) 12%, transparent);
+}
+.arow__toggle:disabled {
+  opacity: 0.5;
+  cursor: progress;
+}

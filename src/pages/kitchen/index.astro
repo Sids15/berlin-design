@@ -7,12 +7,18 @@
  */
 import AppLayout from "../../layouts/AppLayout.astro";
 import KitchenBoard from "../../components/order/KitchenBoard.tsx";
+import AvailabilityPanel from "../../components/order/AvailabilityPanel.tsx";
 import { getActiveKitchenOrders } from "../../lib/orders/kitchen";
+import { getKitchenMenu } from "../../lib/menu/availability";
 
 export const prerender = false;
 
 const { supabase, profile } = Astro.locals;
 const initialOrders = await getActiveKitchenOrders(supabase);
+
+// The 86 toggle is for kitchen + manager (the RPC enforces this too).
+const canEditAvailability = profile!.role === "kitchen" || profile!.role === "manager";
+const initialMenu = canEditAvailability ? await getKitchenMenu(supabase) : [];
 ---
 
 <AppLayout title="Kitchen — Berlin">
@@ -32,6 +38,8 @@ const initialOrders = await getActiveKitchenOrders(supabase);
     </header>
 
     <KitchenBoard client:load initialOrders={initialOrders} />
+
+    {canEditAvailability && <AvailabilityPanel client:load initialMenu={initialMenu} />}
   </main>
 </AppLayout>
 
