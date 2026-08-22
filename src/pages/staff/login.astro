@@ -4,10 +4,15 @@
  * /api/auth/login, which signs in and sets the session cookies. Already-signed-in
  * staff are sent through — unless their role can't open the target, in which case
  * the form is shown so they can sign in with the right account.
+ *
+ * Design: a split "back-of-house door" — the nocturnal rooftop panel beside a
+ * quiet sign-in column, in the marketing site's night vocabulary.
  */
+import { Picture } from "astro:assets";
 import AppLayout from "../../layouts/AppLayout.astro";
 import { safeNext } from "../../lib/http/safe-next";
 import { roleCanAccess } from "../../lib/auth/access";
+import rooftop from "../../assets/rooftop/rooftop-city-night.jpg";
 
 export const prerender = false;
 
@@ -40,66 +45,83 @@ const errorText = error ? (ERROR_COPY[error] ?? "Couldn't sign you in.") : null;
 
 <AppLayout title="Sign in — Berlin">
   <main class="login">
-    <div class="login__stage">
-      <header class="login__head">
-        <p class="login__eyebrow">Berlin · Haus de Gourmet</p>
-        <h1 class="login__title">Sign in</h1>
-        <p class="login__sub">Welcome back. Sign in to continue.</p>
-      </header>
+    <!-- Brand panel -->
+    <aside class="login__aside">
+      <Picture
+        src={rooftop}
+        formats={["avif", "webp"]}
+        fallbackFormat="jpg"
+        alt="Berlin — Haus de Gourmet, a rooftop above the city at night"
+        widths={[600, 900, 1400]}
+        sizes="(max-width: 60rem) 100vw, 55vw"
+        class="login__aside-img"
+      />
+      <div class="login__aside-scrim" aria-hidden="true"></div>
+      <div class="login__aside-inner">
+        <p class="login__aside-top">Staff &amp; kitchen entrance</p>
+        <div class="login__aside-brand">
+          <p class="login__aside-eyebrow">Haus de Gourmet</p>
+          <p class="login__wordmark">Berlin</p>
+          <p class="login__aside-tag">A rooftop gourmet house, above the city.</p>
+        </div>
+      </div>
+    </aside>
 
-      {errorText && <p class="login__alert login__alert--error" role="alert">{errorText}</p>}
-      {signedInRole && !errorText && (
-        <p class="login__alert" role="status">
-          You're signed in as <strong>{signedInRole}</strong>. Sign in with the
-          account for this area to continue.
-        </p>
-      )}
+    <!-- Sign-in column -->
+    <section class="login__main">
+      <div class="login__stage">
+        <header class="login__head">
+          <p class="login__eyebrow">Back of house</p>
+          <h1 class="login__title">Sign in</h1>
+          <p class="login__sub">Welcome back. Sign in to continue.</p>
+        </header>
 
-      <form class="login__form" method="post" action="/api/auth/login">
-        <input type="hidden" name="next" value={next} />
+        {errorText && <p class="login__alert login__alert--error" role="alert">{errorText}</p>}
+        {signedInRole && !errorText && (
+          <p class="login__alert" role="status">
+            You're signed in as <strong>{signedInRole}</strong>. Sign in with the
+            account for this area to continue.
+          </p>
+        )}
 
-        <label class="field">
-          <span class="field__label">Email</span>
-          <input
-            class="field__input"
-            type="email"
-            name="email"
-            autocomplete="username"
-            required
-            autofocus
-          />
-        </label>
+        <form class="login__form" method="post" action="/api/auth/login">
+          <input type="hidden" name="next" value={next} />
 
-        <label class="field">
-          <span class="field__label">Password</span>
-          <input
-            class="field__input"
-            type="password"
-            name="password"
-            autocomplete="current-password"
-            required
-            data-password
-          />
-          <button type="button" class="field__reveal" data-reveal aria-pressed="false">
-            Show
+          <label class="field">
+            <span class="field__label">Email</span>
+            <input class="field__input" type="email" name="email" autocomplete="username" required autofocus />
+          </label>
+
+          <label class="field">
+            <span class="field__label">Password</span>
+            <input
+              class="field__input"
+              type="password"
+              name="password"
+              autocomplete="current-password"
+              required
+              data-password
+            />
+            <button type="button" class="field__reveal" data-reveal aria-pressed="false">Show</button>
+          </label>
+
+          <button class="login__submit" type="submit" data-submit>
+            <span class="login__submit-label">Sign in</span>
+            <svg class="login__submit-arrow" width="34" height="8" viewBox="0 0 34 8" fill="none" aria-hidden="true">
+              <path d="M0 4h32M32 4l-5-3.25M32 4l-5 3.25" stroke="currentColor" stroke-width="1" stroke-linecap="square" />
+            </svg>
           </button>
-        </label>
 
-        <button class="login__submit" type="submit" data-submit>
-          <span class="login__submit-label">Sign in</span>
-          <svg class="login__submit-arrow" width="34" height="8" viewBox="0 0 34 8" fill="none" aria-hidden="true">
-            <path d="M0 4h32M32 4l-5-3.25M32 4l-5 3.25" stroke="currentColor" stroke-width="1" stroke-linecap="square" />
-          </svg>
-        </button>
-      </form>
+          <p class="login__help">Trouble signing in? Ask your manager to reset your access.</p>
+        </form>
 
-      <p class="login__foot">Staff & kitchen access</p>
-    </div>
+        <p class="login__foot">Berlin · Haus de Gourmet</p>
+      </div>
+    </section>
   </main>
 </AppLayout>
 
 <script>
-  // Show/hide password.
   const reveal = document.querySelector<HTMLButtonElement>("[data-reveal]");
   const pw = document.querySelector<HTMLInputElement>("[data-password]");
   reveal?.addEventListener("click", () => {
@@ -109,7 +131,6 @@ const errorText = error ? (ERROR_COPY[error] ?? "Couldn't sign you in.") : null;
     reveal.setAttribute("aria-pressed", String(show));
   });
 
-  // Loading state on submit (native validation still runs first).
   const form = document.querySelector<HTMLFormElement>(".login__form");
   const submit = document.querySelector<HTMLButtonElement>("[data-submit]");
   const label = submit?.querySelector<HTMLElement>(".login__submit-label");
@@ -123,44 +144,109 @@ const errorText = error ? (ERROR_COPY[error] ?? "Couldn't sign you in.") : null;
 
 <style>
   .login {
-    position: relative;
     min-height: 100svh;
+    display: grid;
+    grid-template-columns: 1.05fr 0.95fr;
+    background: var(--color-void);
+  }
+
+  /* --- Brand panel -------------------------------------------------------- */
+  .login__aside {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+  }
+  .login__aside-img {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: brightness(0.7) contrast(1.05) saturate(0.95);
+  }
+  .login__aside-scrim {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background:
+      linear-gradient(to top, var(--color-void) 4%, rgba(9, 9, 8, 0.15) 55%, rgba(9, 9, 8, 0.55) 100%),
+      linear-gradient(to right, rgba(9, 9, 8, 0.55), rgba(9, 9, 8, 0) 60%);
+  }
+  .login__aside-inner {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: clamp(2rem, 4vw, 3.5rem);
+  }
+  .login__aside-top {
+    font-family: var(--font-ui);
+    font-size: var(--fs-caption);
+    font-weight: 500;
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .login__aside-eyebrow {
+    font-size: var(--fs-caption);
+    font-weight: 500;
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .login__wordmark {
+    margin-block-start: var(--space-8);
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: clamp(3.5rem, 7vw, 6rem);
+    line-height: var(--lh-display);
+    letter-spacing: var(--tracking-display);
+    text-transform: uppercase;
+    color: var(--text-strong);
+  }
+  .login__aside-tag {
+    margin-block-start: var(--space-16);
+    max-width: 20rem;
+    font-size: var(--fs-caption);
+    font-weight: 500;
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    line-height: 1.7;
+    color: var(--text-muted);
+  }
+
+  /* --- Sign-in column ----------------------------------------------------- */
+  .login__main {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: var(--gutter);
-    overflow: hidden;
-    background: var(--color-void);
+    border-inline-start: 1px solid var(--accent-muted);
   }
-  /* Ambient champagne glow — depth without imagery. */
-  .login::before {
+  .login__main::before {
     content: "";
     position: absolute;
     inset: 0;
-    z-index: 0;
     pointer-events: none;
-    background:
-      radial-gradient(60% 45% at 50% 12%, rgba(180, 154, 99, 0.12), transparent 70%),
-      radial-gradient(80% 60% at 50% 120%, rgba(180, 154, 99, 0.06), transparent 70%);
+    background: radial-gradient(70% 50% at 50% 0%, rgba(180, 154, 99, 0.08), transparent 70%);
   }
-
   .login__stage {
     position: relative;
-    z-index: 1;
     width: 100%;
-    max-width: 24rem;
+    max-width: 22rem;
     display: flex;
     flex-direction: column;
     gap: var(--space-32);
   }
-
-  /* --- Header ------------------------------------------------------------- */
   .login__head {
     display: flex;
     flex-direction: column;
   }
   .login__eyebrow {
-    font-family: var(--font-ui);
     font-size: var(--fs-caption);
     font-weight: 500;
     letter-spacing: var(--tracking-label);
@@ -189,7 +275,6 @@ const errorText = error ? (ERROR_COPY[error] ?? "Couldn't sign you in.") : null;
     color: var(--text-muted);
   }
 
-  /* --- Alerts ------------------------------------------------------------- */
   .login__alert {
     padding: var(--space-12) var(--space-16);
     font-size: var(--fs-caption);
@@ -207,7 +292,6 @@ const errorText = error ? (ERROR_COPY[error] ?? "Couldn't sign you in.") : null;
     background: color-mix(in srgb, var(--color-berlin-red) 14%, transparent);
   }
 
-  /* --- Form --------------------------------------------------------------- */
   .login__form {
     display: flex;
     flex-direction: column;
@@ -244,7 +328,6 @@ const errorText = error ? (ERROR_COPY[error] ?? "Couldn't sign you in.") : null;
   .field__input:focus {
     outline: none;
   }
-  /* The signature: a champagne line drawing in from the left on focus. */
   .field::after {
     content: "";
     position: absolute;
@@ -259,7 +342,6 @@ const errorText = error ? (ERROR_COPY[error] ?? "Couldn't sign you in.") : null;
   .field:focus-within::after {
     transform: scaleX(1);
   }
-  /* Keep autofill on-theme (no white box on the void ground). */
   .field__input:-webkit-autofill,
   .field__input:-webkit-autofill:focus {
     -webkit-text-fill-color: var(--text-strong);
@@ -288,7 +370,6 @@ const errorText = error ? (ERROR_COPY[error] ?? "Couldn't sign you in.") : null;
     outline: none;
   }
 
-  /* --- Submit ------------------------------------------------------------- */
   .login__submit {
     display: inline-flex;
     align-items: center;
@@ -325,6 +406,12 @@ const errorText = error ? (ERROR_COPY[error] ?? "Couldn't sign you in.") : null;
     transform: translateX(4px);
   }
 
+  .login__help {
+    margin-block-start: calc(-1 * var(--space-16));
+    font-size: var(--fs-caption);
+    line-height: 1.5;
+    color: var(--text-muted);
+  }
   .login__foot {
     font-size: var(--fs-label);
     letter-spacing: var(--tracking-label);
@@ -332,18 +419,43 @@ const errorText = error ? (ERROR_COPY[error] ?? "Couldn't sign you in.") : null;
     color: var(--text-muted);
   }
 
-  /* --- Entrance ----------------------------------------------------------- */
+  /* --- Responsive --------------------------------------------------------- */
+  @media (max-width: 60rem) {
+    .login {
+      grid-template-columns: 1fr;
+      grid-template-rows: 38svh 1fr;
+    }
+    .login__main {
+      border-inline-start: none;
+      border-block-start: 1px solid var(--accent-muted);
+    }
+  }
+  @media (max-width: 60rem) and (max-height: 40rem) {
+    .login {
+      grid-template-rows: none;
+      grid-template-columns: 1fr;
+    }
+    .login__aside {
+      display: none;
+    }
+  }
+
+  /* --- Motion ------------------------------------------------------------- */
   @media (prefers-reduced-motion: no-preference) {
+    .login__aside-inner > *,
     .login__head,
     .login__form,
     .login__foot {
       animation: login-rise var(--dur-entry) var(--ease-out) both;
     }
+    .login__aside-brand {
+      animation-delay: 120ms;
+    }
     .login__form {
-      animation-delay: 140ms;
+      animation-delay: 180ms;
     }
     .login__foot {
-      animation-delay: 260ms;
+      animation-delay: 300ms;
     }
     @keyframes login-rise {
       from {
