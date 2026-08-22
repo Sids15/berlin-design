@@ -13,7 +13,7 @@ import { roleCanAccess } from "./lib/auth/access";
  */
 const PROTECTED = ["/staff", "/kitchen", "/admin"];
 const PUBLIC_WITHIN = ["/staff/login"];
-const SESSION_APIS = ["/api/staff", "/api/auth/logout"];
+const SESSION_APIS = ["/api/staff", "/api/admin", "/api/auth/logout"];
 
 const underAny = (path: string, prefixes: string[]) =>
   prefixes.some((p) => path === p || path.startsWith(p + "/"));

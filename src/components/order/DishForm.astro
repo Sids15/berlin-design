@@ -1,0 +1,147 @@
+---
+/**
+ * Shared add/edit dish form for the manager panel. `item` null = create.
+ */
+import type { AdminItem, CategoryOption } from "../../lib/menu/admin";
+
+interface Props {
+  item?: AdminItem | null;
+  categories: CategoryOption[];
+  action: string;
+  submitLabel: string;
+  isEdit?: boolean;
+}
+const { item = null, categories, action, submitLabel, isEdit = false } = Astro.props;
+const veg = item?.veg_type ?? "veg";
+---
+
+<form class="dish" method="post" action={action}>
+  {isEdit && <input type="hidden" name="action" value="update" />}
+
+  <label class="field">
+    <span class="field__label">Name</span>
+    <input class="field__input" type="text" name="name" value={item?.name ?? ""} required autofocus />
+  </label>
+
+  <div class="field-row">
+    <label class="field">
+      <span class="field__label">Category</span>
+      <select class="field__input" name="category_id" required>
+        {categories.map((c) => (
+          <option value={c.id} selected={item?.category_id === c.id}>{c.name}</option>
+        ))}
+      </select>
+    </label>
+    <label class="field">
+      <span class="field__label">Price (₹)</span>
+      <input class="field__input" type="number" name="price" min="0" step="1" value={item?.price ?? 0} required />
+    </label>
+  </div>
+
+  <div class="field-row">
+    <label class="field">
+      <span class="field__label">Veg type</span>
+      <select class="field__input" name="veg_type">
+        <option value="veg" selected={veg === "veg"}>Veg</option>
+        <option value="non_veg" selected={veg === "non_veg"}>Non-veg</option>
+        <option value="egg" selected={veg === "egg"}>Egg</option>
+      </select>
+    </label>
+    <label class="field">
+      <span class="field__label">Sort order</span>
+      <input class="field__input" type="number" name="sort_order" step="1" value={item?.sort_order ?? 0} />
+    </label>
+  </div>
+
+  <label class="field">
+    <span class="field__label">Description</span>
+    <textarea class="field__input" name="description" rows="2" maxlength="500">{item?.description ?? ""}</textarea>
+  </label>
+
+  <label class="field">
+    <span class="field__label">Tags (comma-separated)</span>
+    <input class="field__input" type="text" name="tags" value={item?.tags?.join(", ") ?? ""} placeholder="e.g. spicy, chef's pick" />
+  </label>
+
+  <div class="checks">
+    <label class="check">
+      <input type="checkbox" name="is_available" checked={item ? item.is_available : true} />
+      <span>Available</span>
+    </label>
+    <label class="check">
+      <input type="checkbox" name="is_signature" checked={item?.is_signature ?? false} />
+      <span>Signature</span>
+    </label>
+  </div>
+
+  <button class="dish__submit" type="submit">{submitLabel}</button>
+</form>
+
+<style>
+  .dish {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-16);
+  }
+  .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-16);
+  }
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+  }
+  .field__label {
+    font-size: var(--fs-caption);
+    letter-spacing: var(--tracking-meta);
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .field__input {
+    padding: var(--space-12) var(--space-16);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-strong);
+    font: inherit;
+  }
+  .field__input:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  textarea.field__input {
+    resize: vertical;
+  }
+  .checks {
+    display: flex;
+    gap: var(--space-24);
+  }
+  .check {
+    display: flex;
+    align-items: center;
+    gap: var(--space-8);
+    color: var(--text);
+    font-size: var(--fs-caption);
+  }
+  .dish__submit {
+    align-self: flex-start;
+    min-height: var(--btn-height);
+    padding-inline: var(--space-32);
+    background: var(--accent);
+    color: var(--color-warm-black);
+    border: none;
+    font: inherit;
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-nav);
+    cursor: pointer;
+  }
+  .dish__submit:hover {
+    opacity: 0.9;
+  }
+  @media (max-width: 30rem) {
+    .field-row {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

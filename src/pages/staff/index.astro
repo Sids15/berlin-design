@@ -57,6 +57,7 @@ function when(iso: string): string {
       </div>
       <div class="staff__who">
         {profile!.role === "manager" && <a class="staff__link" href="/kitchen">Kitchen</a>}
+        {profile!.role === "manager" && <a class="staff__link" href="/admin">Menu</a>}
         {canTake && <a class="staff__link" href="/staff/tabs">Tabs</a>}
         {canTake && <a class="staff__build" href="/staff/new">+ Build order</a>}
         <span class="staff__name">{profile!.name || "Staff"}</span>

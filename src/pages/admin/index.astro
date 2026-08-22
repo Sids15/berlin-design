@@ -1,0 +1,253 @@
+---
+/**
+ * Manager menu panel (Feature 6). Manager-only (role-gated by the middleware).
+ * Lists every dish by category with edit/delete; add a new dish. Category CRUD
+ * lands next. Writes go through the authenticated client — RLS enforces manager.
+ */
+import AppLayout from "../../layouts/AppLayout.astro";
+import { getAdminMenu } from "../../lib/menu/admin";
+import { formatINR } from "../../lib/money";
+
+export const prerender = false;
+
+const { supabase } = Astro.locals;
+const menu = await getAdminMenu(supabase);
+
+const params = Astro.url.searchParams;
+const ok = params.get("ok"); // created | saved | deleted
+const err = params.get("err");
+const OK_COPY: Record<string, string> = {
+  created: "Dish created.",
+  saved: "Dish saved.",
+  deleted: "Dish deleted.",
+};
+---
+
+<AppLayout title="Menu manager — Berlin">
+  <main class="admin">
+    <header class="admin__bar">
+      <div>
+        <p class="admin__eyebrow">Berlin · Manager</p>
+        <h1 class="admin__title">Menu manager</h1>
+      </div>
+      <div class="admin__actions">
+        <a class="admin__link" href="/staff">← Order desk</a>
+        <a class="admin__add" href="/admin/items/new">+ Add dish</a>
+      </div>
+    </header>
+
+    {ok && <p class="flash flash--ok" role="status">{OK_COPY[ok] ?? "Done."}</p>}
+    {err && <p class="flash flash--err" role="alert">{err}</p>}
+
+    {menu.length === 0 ? (
+      <p class="admin__empty">No categories yet. Category management is coming next.</p>
+    ) : (
+      menu.map((cat) => (
+        <section class="cat">
+          <h2 class="cat__name">{cat.name}</h2>
+          {cat.items.length === 0 ? (
+            <p class="cat__empty">No dishes in this category.</p>
+          ) : (
+            <ul class="cat__list">
+              {cat.items.map((i) => (
+                <li class={`drow ${i.is_available ? "" : "drow--off"}`}>
+                  <span class={`drow__dot drow__dot--${i.veg_type}`} aria-hidden="true" />
+                  <span class="drow__name">
+                    {i.name}
+                    {i.is_signature && <span class="drow__sig">Signature</span>}
+                    {!i.is_available && <span class="drow__off">86'd</span>}
+                  </span>
+                  <span class="drow__price">{formatINR(i.price)}</span>
+                  <a class="drow__edit" href={`/admin/items/${i.id}`}>Edit</a>
+                  <form method="post" action={`/api/admin/items/${i.id}`} class="drow__delform">
+                    <input type="hidden" name="action" value="delete" />
+                    <button type="submit" class="drow__del">Delete</button>
+                  </form>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      ))
+    )}
+  </main>
+</AppLayout>
+
+<style>
+  .admin {
+    max-width: var(--container-editorial);
+    margin-inline: auto;
+    padding: var(--space-32) var(--gutter) var(--space-64);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-24);
+  }
+  .admin__bar {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-16);
+    padding-block-end: var(--space-24);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .admin__eyebrow {
+    font-size: var(--fs-caption);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .admin__title {
+    margin-block-start: var(--space-4);
+    font-family: var(--font-display);
+    font-size: var(--fs-display-s);
+    color: var(--text-strong);
+  }
+  .admin__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-16);
+  }
+  .admin__link {
+    font-size: var(--fs-caption);
+    letter-spacing: var(--tracking-meta);
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .admin__link:hover {
+    color: var(--text-strong);
+  }
+  .admin__add {
+    padding: var(--space-8) var(--space-16);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-size: var(--fs-caption);
+    letter-spacing: var(--tracking-meta);
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .admin__add:hover {
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+  }
+  .flash {
+    padding: var(--space-12) var(--space-16);
+    font-size: var(--fs-caption);
+  }
+  .flash--ok {
+    border: 1px solid var(--accent);
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    color: var(--text-strong);
+  }
+  .flash--err {
+    border: 1px solid var(--color-berlin-red);
+    background: color-mix(in srgb, var(--color-berlin-red) 14%, transparent);
+    color: var(--text-strong);
+  }
+  .admin__empty {
+    padding-block: var(--space-48);
+    text-align: center;
+    color: var(--text-muted);
+  }
+  .cat__name {
+    font-family: var(--font-display);
+    font-size: var(--fs-heading-m);
+    color: var(--text-strong);
+    padding-block-end: var(--space-12);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .cat__empty {
+    padding-block: var(--space-16);
+    color: var(--text-muted);
+    font-size: var(--fs-caption);
+  }
+  .cat__list {
+    display: flex;
+    flex-direction: column;
+  }
+  .drow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-16);
+    padding-block: var(--space-16);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .drow__dot {
+    flex: 0 0 auto;
+    width: 0.75rem;
+    height: 0.75rem;
+    border: 1.5px solid currentColor;
+    position: relative;
+  }
+  .drow__dot::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 50%;
+    background: currentColor;
+  }
+  .drow__dot--veg {
+    color: #4c8b4a;
+  }
+  .drow__dot--non_veg {
+    color: #a33227;
+  }
+  .drow__dot--egg {
+    color: #b08a3c;
+  }
+  .drow__name {
+    flex: 1 1 auto;
+    min-width: 0;
+    color: var(--text-strong);
+    display: flex;
+    align-items: center;
+    gap: var(--space-8);
+    flex-wrap: wrap;
+  }
+  .drow--off .drow__name {
+    color: var(--text-muted);
+  }
+  .drow__sig {
+    font-size: var(--fs-label);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--accent);
+    border: 1px solid var(--accent-muted);
+    padding: 1px var(--space-8);
+  }
+  .drow__off {
+    font-size: var(--fs-label);
+    letter-spacing: var(--tracking-meta);
+    text-transform: uppercase;
+    color: #c76b60;
+    border: 1px solid var(--color-berlin-red);
+    padding: 1px var(--space-8);
+  }
+  .drow__price {
+    flex: 0 0 auto;
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+  }
+  .drow__edit {
+    flex: 0 0 auto;
+    font-size: var(--fs-caption);
+    letter-spacing: var(--tracking-meta);
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .drow__del {
+    flex: 0 0 auto;
+    background: none;
+    border: none;
+    font: inherit;
+    font-size: var(--fs-caption);
+    letter-spacing: var(--tracking-meta);
+    text-transform: uppercase;
+    color: var(--text-muted);
+    cursor: pointer;
+  }
+  .drow__del:hover {
+    color: var(--color-berlin-red);
+  }
+</style>
